@@ -1,0 +1,3 @@
+[submodule "plugins/framarticle_toolbar"]
+	path = plugins/framarticle_toolbar
+	url = https://github.com/ldidry/framarticle_toolbar.git
