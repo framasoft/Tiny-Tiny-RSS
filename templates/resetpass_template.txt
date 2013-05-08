@@ -3,7 +3,7 @@ Bonjour, ${LOGIN}.
 
 Votre mot de passe pour Framanews a été modifié.
 
-Votre nouveau mot de pass est ${NEWPASS}.
+Votre nouveau mot de passe est ${NEWPASS}.
 
 Cordialement,
 Le daemon de messagerie de Framanews.

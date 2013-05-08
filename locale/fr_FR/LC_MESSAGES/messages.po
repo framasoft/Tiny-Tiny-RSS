@@ -1430,7 +1430,7 @@ msgstr "Envoi du mot de passe de <b>%s</b> à <b>%s</b>"
 
 #: classes/pref/users.php:299
 msgid "[tt-rss] Password change notification"
-msgstr "[tt-rss] Notification de changement de mot passe"
+msgstr "[tt-rss] Notification de changement de mot de passe"
 
 #: classes/pref/users.php:342 classes/pref/labels.php:272
 #: classes/pref/filters.php:279 classes/pref/filters.php:327
