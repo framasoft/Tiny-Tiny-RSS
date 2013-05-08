@@ -1,5 +1,5 @@
 <!-- $BeginBlock digest -->
-<h1 style='font-size : x-large'>New headlines for last 24 hours, as of ${CUR_DATE} ${CUR_TIME}</h1>
+<h1 style='font-size : x-large'>Les nouveux articles des dernières 24 heures, le ${CUR_DATE} à ${CUR_TIME}</h1>
 <hr/>
 <!-- $BeginBlock feed -->
 <h2 style='font-size : large'>${FEED_TITLE}</h2>
@@ -13,5 +13,5 @@
 <!-- $EndBlock feed -->
  
 <hr>
-<em>To unsubscribe, visit your configuration options or contact instance owner.</em>
+<em>Pour vous désinscrire, changez vos paramètres de configuration ou contactez le(s) responsable(s) de framanews.org.</em>
 <!-- $EndBlock digest -->

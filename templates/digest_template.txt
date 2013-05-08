@@ -1,5 +1,5 @@
 <!-- $BeginBlock digest -->
-New headlines for last 24 hours, as of ${CUR_DATE} ${CUR_TIME}
+Les nouveux articles des dernières 24 heures, le ${CUR_DATE} à ${CUR_TIME}
 ==============================================================
 <!-- $BeginBlock feed -->
 ${FEED_TITLE}
@@ -10,5 +10,5 @@ ${FEED_TITLE}
 <!-- $EndBlock article -->
 <!-- $EndBlock feed -->
 -- 
-To unsubscribe, visit your configuration options or contact instance owner.
+Pour vous désinscrire, changez vos paramètres de configuration ou contactez le(s) responsable(s) de framanews.org.
 <!-- $EndBlock digest -->

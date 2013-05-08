@@ -291,7 +291,7 @@
 
 					initialize_user( $new_uid);
 
-					$reg_text = "Hi!\n".
+					/*$reg_text = "Hi!\n".
 						"\n".
 						"You are receiving this message, because you (or somebody else) have opened\n".
 						"an account at Tiny Tiny RSS.\n".
@@ -304,28 +304,48 @@
 						"Don't forget to login at least once to your new account, otherwise\n".
 						"it will be deleted in 24 hours.\n".
 						"\n".
-						"If that wasn't you, just ignore this message. Thanks.";
+						"If that wasn't you, just ignore this message. Thanks.";*/
+					$reg_text = "Bonjour !\n".
+						"\n".
+						"Vous recevez ce message car vous (ou quelqu'un d'autre) a ouvert\n".
+						"un compte sur Framanews.\n".
+						"\n".
+						"Vos informations de connexion sont les suivantes:\n".
+						"\n".
+						"Identifiant: $login\n".
+						"Mot de passe: $password\n".
+						"\n".
+						"N'oubliez pas de vous connecter au moins une fois sur votre nouveau compte, sinon\n".
+						"il sera supprimé dans les 24 heures.\n".
+						"\n".
+						"Si ce n'était pas vous, ignorez ce message. Merci";
 
 					$mail = new ttrssMailer();
 					$mail->IsHTML(false);
-					$rc = $mail->quickMail($email, "", "Registration information for Tiny Tiny RSS", $reg_text, false);
+					$rc = $mail->quickMail($email, "", "Informations d'enregistrement sur Framanews", $reg_text, false);
 
 					if (!$rc) print_error($mail->ErrorInfo);
 
 					unset($reg_text);
 					unset($mail);
 					unset($rc);
-					$reg_text = "Hi!\n".
+					/*$reg_text = "Hi!\n".
 						"\n".
 						"New user had registered at your Tiny Tiny RSS installation.\n".
 						"\n".
 						"Login: $login\n".
+						"Email: $email\n";*/
+					$reg_text = "Bonjour !\n".
+						"\n".
+						"Un nouvel utilisateur s'est enregistré sur Framanews.\n".
+						"\n".
+						"Identifiant: $login\n".
 						"Email: $email\n";
 
 
 					$mail = new ttrssMailer();
 					$mail->IsHTML(false);
-					$rc = $mail->quickMail(REG_NOTIFY_ADDRESS, "", "Registration notice for Tiny Tiny RSS", $reg_text, false);
+					$rc = $mail->quickMail(REG_NOTIFY_ADDRESS, "", "Avis d'enregistrement sur Framanews", $reg_text, false);
 					if (!$rc) print_error($mail->ErrorInfo);
 
 					print_notice(__("Account created successfully."));

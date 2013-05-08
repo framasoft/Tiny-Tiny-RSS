@@ -1,12 +1,12 @@
 <!-- $BeginBlock email -->
-Hi,
+Bonjour,
 
-I've been reading this and thought it might interest you:
+J'ai lu ça et je me suis dit que ça pourrait t'intéresser :
 <!-- $BeginBlock article -->
 * ${ARTICLE_TITLE}
   ${ARTICLE_URL}
 <!-- $EndBlock article -->
 
 -- 
-This message has been sent by Tiny Tiny RSS installation at ${TTRSS_HOST}.
+Ce message a été envoyé par ${TTRSS_HOST}.
 <!-- $EndBlock email -->
