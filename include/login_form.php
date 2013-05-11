@@ -214,7 +214,7 @@ function bwLimitChange(elem) {
 			<label>&nbsp;</label>
 			<input dojoType="dijit.form.CheckBox" name="bw_limit" id="bw_limit" type="checkbox"
 				onchange="bwLimitChange(this)">
-			<label id="bw_limit_label" style='display : inline' for="bw_limit"><?php echo __("Use less traffic") ?></label>
+			<label id="bw_limit_label" style='display : inline' for="bw_limit"><?php echo __("Use less traffic") ?> (<a href="<?php echo htmlspecialchars(SELF_URL_PATH) ?>../#min_bw" title="Ça sert à quoi ?">?</a>)</label>
 		</div>
 
 		<div dojoType="dijit.Tooltip" connectId="bw_limit_label" position="below">
