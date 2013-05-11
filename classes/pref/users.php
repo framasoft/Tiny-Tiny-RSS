@@ -282,6 +282,7 @@ class Pref_Users extends Handler_Protected {
 
 				$tpl->setVariable('LOGIN', $login);
 				$tpl->setVariable('NEWPASS', $tmp_user_pwd);
+				$tpl->setVariable('TTRSS_URL', htmlspecialchars(SELF_URL_PATH));
 
 				$tpl->addBlock('message');
 

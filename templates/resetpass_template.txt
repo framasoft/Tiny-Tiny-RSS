@@ -5,6 +5,8 @@ Votre mot de passe pour Framanews a été modifié.
 
 Votre nouveau mot de passe est ${NEWPASS}.
 
+Vous pouvez vous connecter sur ${TTRSS_URL}.
+
 Cordialement,
 Le daemon de messagerie de Framanews.
 <!-- $EndBlock message -->

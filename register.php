@@ -317,6 +317,7 @@
 						"\n".
 						"N'oubliez pas de vous connecter au moins une fois sur votre nouveau compte, sinon\n".
 						"il sera supprimé dans les 24 heures.\n".
+						"Connectez-vous sur ".htmlspecialchars(SELF_URL_PATH).".\n".
 						"\n".
 						"Si ce n'était pas vous, ignorez ce message. Merci";
 
