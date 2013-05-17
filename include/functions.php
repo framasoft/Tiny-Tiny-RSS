@@ -61,7 +61,7 @@
 	 */
 	function get_translations() {
 		$tr = array(
-					"auto"  => "Detect automatically",
+					"auto"  => "Détection automatique",
 					"ca_CA" => "Català",
 					"cs_CZ" => "Česky",
 					"en_US" => "English",
