@@ -100,7 +100,7 @@
 		if ($_SESSION["uid"] && get_schema_version() >= 120) {
 			$pref_lang = get_pref("USER_LANGUAGE", $_SESSION["uid"]);
 
-			if ($pref_lang) {
+			if ($pref_lang && $pref_lang != 'auto') {
 				$lang = $pref_lang;
 			}
 		}
@@ -773,6 +773,7 @@
 			load_user_plugins($_SESSION["uid"]);
 		} else {
 			if (!validate_session()) $_SESSION["uid"] = false;
+			startup_gettext();
 
 			if (!$_SESSION["uid"]) {
 
@@ -798,7 +799,6 @@
 			}
 
 			if ($_SESSION["uid"]) {
-				startup_gettext();
 				load_user_plugins($_SESSION["uid"]);
 
 				/* cleanup ccache */

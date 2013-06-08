@@ -22,6 +22,7 @@
 
 	if (!init_plugins()) return;
 
+	startup_gettext();
 	login_sequence();
 
 	header('Content-Type: text/html; charset=utf-8');

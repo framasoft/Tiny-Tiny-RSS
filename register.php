@@ -16,6 +16,7 @@
 	require_once "db.php";
 
 	$action = $_REQUEST["action"];
+	startup_gettext();
 
 	if (!init_plugins()) return;
 
