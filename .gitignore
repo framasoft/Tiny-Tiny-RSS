@@ -7,6 +7,7 @@ config.php
 feed-icons/*
 cache/*/*
 lock/*
+plugins/*
 tags
 cache/htmlpurifier/*/*ser
 lib/htmlpurifier/library/HTMLPurifier/DefinitionCache/Serializer/*/*ser
