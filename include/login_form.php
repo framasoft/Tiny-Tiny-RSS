@@ -167,7 +167,7 @@ function bwLimitChange(elem) {
 <input dojoType="dijit.form.TextBox" style="display : none" name="op" value="login">
 
 <div class='header'>
-	<img src="images/logo_wide.png">
+	<img src="images/logo_wide_framanews.png">
 </div>
 
 <div class='form'>
