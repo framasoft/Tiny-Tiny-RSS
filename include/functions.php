@@ -735,6 +735,10 @@
 	function initialize_user($uid) {
 
 		db_query("insert into ttrss_feeds (owner_uid,title,feed_url)
+			values ('$uid', 'Framablog',
+				'http://www.framablog.org/index.php/feed/atom')");
+
+		db_query("insert into ttrss_feeds (owner_uid,title,feed_url)
 			values ('$uid', 'Tiny Tiny RSS: New Releases',
 			'http://tt-rss.org/releases.rss')");
 
