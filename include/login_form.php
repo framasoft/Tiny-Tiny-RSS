@@ -1,7 +1,7 @@
 <?php startup_gettext(); ?>
 <html>
 <head>
-	<title>Tiny Tiny RSS : Login</title>
+	<title>Framanews : Login</title>
 	<link rel="stylesheet" type="text/css" href="lib/dijit/themes/claro/claro.css"/>
 	<link rel="stylesheet" type="text/css" href="tt-rss.css">
 	<link rel="shortcut icon" type="image/png" href="images/favicon.png">

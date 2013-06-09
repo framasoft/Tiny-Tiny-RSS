@@ -31,7 +31,7 @@
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-	<title>Tiny Tiny RSS : <?php echo __("Preferences") ?></title>
+	<title>Framanews : <?php echo __("Preferences") ?></title>
 
 	<?php stylesheet_tag("lib/dijit/themes/claro/claro.css"); ?>
 	<?php stylesheet_tag("tt-rss.css"); ?>

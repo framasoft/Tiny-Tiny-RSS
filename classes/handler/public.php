@@ -380,7 +380,7 @@ class Handler_Public extends Handler {
 		}
 
 		header('Content-Type: text/html; charset=utf-8');
-		print "<html><head><title>Tiny Tiny RSS</title>";
+		print "<html><head><title>Framanews</title>";
 
 		stylesheet_tag("utility.css");
 		javascript_tag("lib/prototype.js");
@@ -552,7 +552,7 @@ class Handler_Public extends Handler {
 			header('Content-Type: text/html; charset=utf-8');
 			print "<html>
 				<head>
-					<title>Tiny Tiny RSS</title>
+					<title>Framanews</title>
 					<link rel=\"stylesheet\" type=\"text/css\" href=\"utility.css\">
 					<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
 				</head>
@@ -734,7 +734,7 @@ class Handler_Public extends Handler {
 	function forgotpass() {
 		startup_gettext();
 		header('Content-Type: text/html; charset=utf-8');
-		print "<html><head><title>Tiny Tiny RSS</title>";
+		print "<html><head><title>Framanews</title>";
 
 		stylesheet_tag("utility.css");
 		javascript_tag("lib/prototype.js");

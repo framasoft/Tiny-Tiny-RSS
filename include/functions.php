@@ -3119,7 +3119,7 @@
 				header("Content-Type: text/html");
 				$rv['content'] .= "<html><head>
 						<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
-						<title>Tiny Tiny RSS - ".$line["title"]."</title>
+						<title>Framanews - ".$line["title"]."</title>
 						<link rel=\"stylesheet\" type=\"text/css\" href=\"tt-rss.css\">
 					</head><body id=\"ttrssZoom\">";
 			}

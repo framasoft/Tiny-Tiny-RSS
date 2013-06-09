@@ -54,7 +54,7 @@
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-	<title>Tiny Tiny RSS</title>
+	<title>Framanews</title>
 
 	<?php stylesheet_tag("lib/dijit/themes/claro/claro.css"); ?>
 	<?php stylesheet_tag("tt-rss.css"); ?>

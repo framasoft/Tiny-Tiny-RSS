@@ -120,7 +120,7 @@ class Opml extends Handler_Protected {
 		$out .= "<opml version=\"1.0\">";
 		$out .= "<head>
 			<dateCreated>" . date("r", time()) . "</dateCreated>
-			<title>Tiny Tiny RSS Feed Export</title>
+			<title>Framanews Feed Export</title>
 		</head>";
 		$out .= "<body>";
 
