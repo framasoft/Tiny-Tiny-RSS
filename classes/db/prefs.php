@@ -171,7 +171,7 @@ class Db_Prefs {
 			}
 
 			if ($pref_name == 'USER_TIMEZONE' && $value == '') {
-				$value = 'UTC';
+				$value = 'Europe/Paris';
 			}
 
 			db_query("UPDATE ttrss_user_prefs SET

@@ -861,6 +861,7 @@
 		$dt = new DateTime($timestamp, $utc_tz);
 
 		$user_tz_string = get_pref('USER_TIMEZONE', $owner_uid);
+		if ($user_tz_string == '') { $user_tz_string = 'Europe/Paris'; }
 
 		if ($user_tz_string != 'Automatic') {
 
@@ -2244,6 +2245,7 @@
 				if (strpos($k, "@") === 0) {
 
 					$user_tz_string = get_pref('USER_TIMEZONE', $_SESSION['uid']);
+					if ($user_tz_string == '') { $user_tz_string = 'Europe/Paris'; }
 					$orig_ts = strtotime(substr($k, 1));
 					$k = date("Y-m-d", convert_timestamp($orig_ts, $user_tz_string, 'UTC'));
 
