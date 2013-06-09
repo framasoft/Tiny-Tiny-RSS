@@ -88,6 +88,7 @@
 		$tpl_t->readTemplateFromFile("templates/digest_template.txt");
 
 		$user_tz_string = get_pref('USER_TIMEZONE', $user_id);
+		if ($user_tz_string == '') { $user_tz_string = 'Europe/Paris'; }
 		$local_ts = convert_timestamp(time(), 'UTC', $user_tz_string);
 
 		$tpl->setVariable('CUR_DATE', date('Y/m/d', $local_ts));
