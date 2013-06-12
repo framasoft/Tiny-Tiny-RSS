@@ -565,13 +565,8 @@ class Handler_Public extends Handler {
 			header('Content-Type: text/html; charset=utf-8');
 			print "<html>
 				<head>
-<<<<<<< HEAD
 					<title>Framanews</title>
-					<link rel=\"stylesheet\" type=\"text/css\" href=\"utility.css\">
-=======
-					<title>Tiny Tiny RSS</title>
 					<link rel=\"stylesheet\" type=\"text/css\" href=\"css/utility.css\">
->>>>>>> b5a9ef5ebc052922ff4d57a6f3611b4fb1f29a2c
 					<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
 				</head>
 				<body>
@@ -751,10 +746,7 @@ class Handler_Public extends Handler {
 
 	function forgotpass() {
 		startup_gettext();
-<<<<<<< HEAD
-=======
 
->>>>>>> b5a9ef5ebc052922ff4d57a6f3611b4fb1f29a2c
 		header('Content-Type: text/html; charset=utf-8');
 		print "<html><head><title>Framanews</title>";
 
