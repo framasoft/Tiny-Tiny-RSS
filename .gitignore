@@ -7,8 +7,8 @@ lib/floIcon.php
 config.php
 feed-icons/*
 cache/*/*
+cache_disk/*
 lock/*
-plugins/*
 tags
 cache/htmlpurifier/*/*ser
 lib/htmlpurifier/library/HTMLPurifier/DefinitionCache/Serializer/*/*ser
