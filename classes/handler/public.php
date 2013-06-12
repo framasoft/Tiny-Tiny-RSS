@@ -3,7 +3,7 @@ class Handler_Public extends Handler {
 
 	private function generate_syndicated_feed($owner_uid, $feed, $is_cat,
 		$limit, $offset, $search, $search_mode,
-		$view_mode = false, $format = 'atom') {
+		$view_mode = false, $format = 'atom', $order = false) {
 
 		require_once "lib/MiniTemplator.class.php";
 
@@ -20,6 +20,18 @@ class Handler_Public extends Handler {
 			$date_sort_field = "last_published DESC";
 		else if ($feed == -1)
 			$date_sort_field = "last_marked DESC";
+
+		switch ($order) {
+		case "title":
+			$date_sort_field = "ttrss_entries.title";
+			break;
+		case "date_reverse":
+			$date_sort_field = "date_entered, updated";
+			break;
+		case "feed_dates":
+			$date_sort_field = "updated DESC";
+			break;
+		}
 
 		$qfh_ret = queryFeedHeadlines($feed,
 			1, $view_mode, $is_cat, $search, $search_mode,
@@ -337,6 +349,7 @@ class Handler_Public extends Handler {
 		$search = $this->dbh->escape_string($_REQUEST["q"]);
 		$search_mode = $this->dbh->escape_string($_REQUEST["smode"]);
 		$view_mode = $this->dbh->escape_string($_REQUEST["view-mode"]);
+		$order = $this->dbh->escape_string($_REQUEST["order"]);
 
 		$format = $this->dbh->escape_string($_REQUEST['format']);
 
@@ -358,7 +371,7 @@ class Handler_Public extends Handler {
 
 		if ($owner_id) {
 			$this->generate_syndicated_feed($owner_id, $feed, $is_cat, $limit,
-				$offset, $search, $search_mode, $view_mode, $format);
+				$offset, $search, $search_mode, $view_mode, $format, $order);
 		} else {
 			header('HTTP/1.1 403 Forbidden');
 		}
@@ -382,7 +395,7 @@ class Handler_Public extends Handler {
 		header('Content-Type: text/html; charset=utf-8');
 		print "<html><head><title>Framanews</title>";
 
-		stylesheet_tag("utility.css");
+		stylesheet_tag("css/utility.css");
 		javascript_tag("lib/prototype.js");
 		javascript_tag("lib/scriptaculous/scriptaculous.js?load=effects,dragdrop,controls");
 		print "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
@@ -552,8 +565,13 @@ class Handler_Public extends Handler {
 			header('Content-Type: text/html; charset=utf-8');
 			print "<html>
 				<head>
+<<<<<<< HEAD
 					<title>Framanews</title>
 					<link rel=\"stylesheet\" type=\"text/css\" href=\"utility.css\">
+=======
+					<title>Tiny Tiny RSS</title>
+					<link rel=\"stylesheet\" type=\"text/css\" href=\"css/utility.css\">
+>>>>>>> b5a9ef5ebc052922ff4d57a6f3611b4fb1f29a2c
 					<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
 				</head>
 				<body>
@@ -733,10 +751,14 @@ class Handler_Public extends Handler {
 
 	function forgotpass() {
 		startup_gettext();
+<<<<<<< HEAD
+=======
+
+>>>>>>> b5a9ef5ebc052922ff4d57a6f3611b4fb1f29a2c
 		header('Content-Type: text/html; charset=utf-8');
 		print "<html><head><title>Framanews</title>";
 
-		stylesheet_tag("utility.css");
+		stylesheet_tag("css/utility.css");
 		javascript_tag("lib/prototype.js");
 
 		print "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
@@ -827,6 +849,7 @@ class Handler_Public extends Handler {
 
 	function dbupdate() {
 		startup_gettext();
+
 		if (!SINGLE_USER_MODE && $_SESSION["access_level"] < 10) {
 			$_SESSION["login_error_msg"] = __("Your access level is insufficient to run this script.");
 			render_login_form();
@@ -837,7 +860,7 @@ class Handler_Public extends Handler {
 			<head>
 			<title>Database Updater</title>
 			<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-			<link rel="stylesheet" type="text/css" href="utility.css"/>
+			<link rel="stylesheet" type="text/css" href="css/utility.css"/>
 			</head>
 			<style type="text/css">
 				span.ok { color : #009000; font-weight : bold; }

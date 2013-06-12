@@ -2,8 +2,12 @@
 Bonjour,
 
 J'ai lu ça et je me suis dit que ça pourrait t'intéresser :
+
 <!-- $BeginBlock article -->
 * ${ARTICLE_TITLE}
+<!-- $BeginBlock note -->
+  ${ARTICLE_NOTE}
+<!-- $EndBlock note -->
   ${ARTICLE_URL}
 <!-- $EndBlock article -->
 
