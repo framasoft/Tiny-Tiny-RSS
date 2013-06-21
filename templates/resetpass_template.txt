@@ -3,7 +3,7 @@ Bonjour, ${LOGIN}.
 
 Votre mot de passe pour Framanews a été modifié.
 
-Votre nouveau mot de passe est ${NEWPASS}.
+Votre nouveau mot de passe est ${NEWPASS}
 
 Vous pouvez vous connecter sur ${TTRSS_URL}.
 
