@@ -762,8 +762,9 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#d6ff77', end
 	-webkit-transition: color .3s;
 	transition: color .3s;
 }
+
 #feeds-holder .counterNode.aux {
-  background: grey;
+  background:#666;
 }
 #feeds-holder .dijitTreeRow:hover .counterNode{
 	background: #AEE239;
@@ -1508,7 +1509,7 @@ table.prefErrorLog td.filename, table.prefErrorLog td.login, table.prefErrorLog 
 /**********************************
  * Icons
  */
-img[src*='images/mark_unset.svg'] {
+img[src*='images/mark_unset.png'] {
   background: url('chalk_improved_images/star-empty.png') no-repeat;
   opacity: .8;
   height: 16px;
@@ -1516,7 +1517,8 @@ img[src*='images/mark_unset.svg'] {
   width: 0;
   display: inline-block;
 }
-img[src*='images/mark_set.svg'] {
+img[src*='images/star.png'],
+img[src*='images/mark_set.png'] {
   background: url('chalk_improved_images/star.png') no-repeat;
   opacity: .8;
   height: 16px;
@@ -1525,7 +1527,8 @@ img[src*='images/mark_set.svg'] {
   display: inline-block;
 }
 
-img[src*='images/pub_set.svg'] {
+img[src*='images/feed.png'],
+img[src*='images/pub_set.png'] {
   background: url('chalk_improved_images/rss.png') no-repeat;
   opacity: .8;
   height: 16px;
@@ -1533,7 +1536,7 @@ img[src*='images/pub_set.svg'] {
   width: 0;
   display: inline-block;
 }
-img[src*='images/pub_unset.svg'] {
+img[src*='images/pub_unset.png'] {
   background: url('chalk_improved_images/rss.png') no-repeat;
   opacity: .1;
   height: 16px;
@@ -1542,7 +1545,7 @@ img[src*='images/pub_unset.svg'] {
   display: inline-block;
 }
 
-img[src*='images/recently_read.png'] {
+img[src*='images/time.png'] {
   background: url('chalk_improved_images/time.png') no-repeat;
   opacity: .8;
   height: 16px;
@@ -1569,7 +1572,7 @@ img[src*='images/fresh.png'] {
   display: inline-block;
 }
 
-img[src*='images/tag.png'] {
+img[src*='images/folder.png'] {
   background: url('chalk_improved_images/tag.png') no-repeat;
   opacity: .8;
   height: 16px;
