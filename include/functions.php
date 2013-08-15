@@ -349,6 +349,10 @@
 				curl_setopt($ch, CURLOPT_POSTFIELDS, $post_query);
 			}
 
+			if ((OPENSSL_VERSION_NUMBER >= 0x0090808f) && (OPENSSL_VERSION_NUMBER < 0x10000000)) {
+				curl_setopt($ch, CURLOPT_SSLVERSION, 3);
+			}
+
 			if ($login && $pass)
 				curl_setopt($ch, CURLOPT_USERPWD, "$login:$pass");
 
@@ -1506,7 +1510,11 @@
 			foreach ($feeds as $feed) {
 				$cv = array("id" => PluginHost::pfeed_to_feed_id($feed['id']),
 					"counter" => $feed['sender']->get_unread($feed['id']));
-					array_push($ret_arr, $cv);
+
+				if (method_exists($feed['sender'], 'get_total'))
+					$cv["auxcounter"] = $feed['sender']->get_total($feed['id']);
+
+				array_push($ret_arr, $cv);
 			}
 		}
 
@@ -1880,19 +1888,19 @@
 			return "images/archive.png";
 			break;
 		case -1:
-			return "images/mark_set.svg";
+			return "images/star.png";
 			break;
 		case -2:
-			return "images/pub_set.svg";
+			return "images/feed.png";
 			break;
 		case -3:
 			return "images/fresh.png";
 			break;
 		case -4:
-			return "images/tag.png";
+			return "images/folder.png";
 			break;
 		case -6:
-			return "images/recently_read.png";
+			return "images/time.png";
 			break;
 		default:
 			if ($id < LABEL_BASE_INDEX) {
@@ -1971,7 +1979,6 @@
 		$params["max_feed_id"] = (int) $max_feed_id;
 		$params["num_feeds"] = (int) $num_feeds;
 
-		$params["collapsed_feedlist"] = (int) get_pref("_COLLAPSED_FEEDLIST");
 		$params["hotkeys"] = get_hotkeys_map();
 
 		$params["csrf_token"] = $_SESSION["csrf_token"];
@@ -2320,7 +2327,7 @@
 		return $rv;
 	}
 
-	function queryFeedHeadlines($feed, $limit, $view_mode, $cat_view, $search, $search_mode, $override_order = false, $offset = 0, $owner_uid = 0, $filter = false, $since_id = 0, $include_children = false, $ignore_vfeed_group = false) {
+	function queryFeedHeadlines($feed, $limit, $view_mode, $cat_view, $search, $search_mode, $override_order = false, $offset = 0, $owner_uid = 0, $filter = false, $since_id = 0, $include_children = false, $ignore_vfeed_group = false, $override_strategy = false, $override_vfeed = false) {
 
 		if (!$owner_uid) $owner_uid = $_SESSION["uid"];
 
@@ -2522,6 +2529,11 @@
 				$allow_archived = true;
 
 				if (!$override_order) $override_order = "last_read DESC";
+
+/*			} else if ($feed == -7) { // shared
+				$query_strategy_part = "uuid != ''";
+				$vfeed_query_part = "ttrss_feeds.title AS feed_title,";
+				$allow_archived = true; */
 			} else if ($feed == -3) { // fresh virtual feed
 				$query_strategy_part = "unread = true AND score >= 0";
 
@@ -2563,6 +2575,14 @@
 				$order_by = $override_order;
 			}
 
+			if ($override_strategy) {
+				$query_strategy_part = $override_strategy;
+			}
+
+			if ($override_vfeed) {
+				$vfeed_query_part = $override_vfeed;
+			}
+
 			$feed_title = "";
 
 			if ($search) {
@@ -2585,7 +2605,9 @@
 				}
 			}
 
-			$content_query_part = "content as content_preview, cached_content, ";
+
+			$content_query_part = "content, content AS content_preview, ";
+
 
 			if (is_numeric($feed)) {
 
@@ -2633,6 +2655,7 @@
 						num_comments,
 						comments,
 						int_id,
+						uuid,
 						hide_images,
 						unread,feed_id,marked,published,link,last_read,orig_feed_id,
 						last_marked, last_published,
@@ -2675,6 +2698,7 @@
 								"tag_cache," .
 								"label_cache," .
 								"link," .
+								"uuid," .
 								"last_read," .
 								"(SELECT hide_images FROM ttrss_feeds WHERE id = feed_id) AS hide_images," .
 								"last_marked, last_published, " .
@@ -2999,19 +3023,19 @@
 	function format_warning($msg, $id = "") {
 		global $link;
 		return "<div class=\"warning\" id=\"$id\">
-			<span><img src=\"images/sign_excl.svg\"></span><span>$msg</span></div>";
+			<span><img src=\"images/alert.png\"></span><span>$msg</span></div>";
 	}
 
 	function format_notice($msg, $id = "") {
 		global $link;
 		return "<div class=\"notice\" id=\"$id\">
-			<span><img src=\"images/sign_info.svg\"></span><span>$msg</span></div>";
+			<span><img src=\"images/information.png\"></span><span>$msg</span></div>";
 	}
 
 	function format_error($msg, $id = "") {
 		global $link;
 		return "<div class=\"error\" id=\"$id\">
-			<span><img src=\"images/sign_excl.svg\"></span><span>$msg</span></div>";
+			<span><img src=\"images/alert.png\"></span><span>$msg</span></div>";
 	}
 
 	function print_notice($msg) {
@@ -3043,7 +3067,7 @@
 			if ($_SESSION["hasAudio"] && (strpos($ctype, "ogg") !== false ||
 				$_SESSION["hasMp3"])) {
 
-				$entry .= "<audio controls>
+				$entry .= "<audio preload=\"none\" controls>
 					<source type=\"$ctype\" src=\"$url\"></source>
 					</audio>";
 
@@ -3109,8 +3133,7 @@
 			tag_cache,
 			author,
 			orig_feed_id,
-			note,
-			cached_content
+			note
 			FROM ttrss_entries,ttrss_user_entries
 			WHERE	id = '$id' AND ref_id = id AND owner_uid = $owner_uid");
 
@@ -3153,6 +3176,21 @@
 						<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
 						<title>Framanews - ".$line["title"]."</title>
 						<link rel=\"stylesheet\" type=\"text/css\" href=\"css/tt-rss.css\">
+						<script type=\"text/javascript\">
+						function openSelectedAttachment(elem) {
+							try {
+								var url = elem[elem.selectedIndex].value;
+
+								if (url) {
+									window.open(url);
+									elem.selectedIndex = 0;
+								}
+
+							} catch (e) {
+								exception_error(\"openSelectedAttachment\", e);
+							}
+						}
+					</script>
 					</head><body id=\"ttrssZoom\">";
 			}
 
@@ -3791,7 +3829,7 @@
 	 * @return string Absolute URL
 	 */
 	function rewrite_relative_url($url, $rel_url) {
-		if (strpos($rel_url, "magnet:") === 0) {
+		if (strpos($rel_url, ":") !== false) {
 			return $rel_url;
 		} else if (strpos($rel_url, "://") !== false) {
 			return $rel_url;
@@ -3961,6 +3999,7 @@
 			$reg_qpart = "REGEXP";
 
 		foreach ($filter["rules"] AS $rule) {
+			$rule['reg_exp'] = str_replace('/', '\/', $rule["reg_exp"]);
 			$regexp_valid = preg_match('/' . $rule['reg_exp'] . '/',
 				$rule['reg_exp']) !== FALSE;
 
@@ -4095,7 +4134,9 @@
 		return in_array($interface, class_implements($class));
 	}
 
-	function geturl($url){
+	function geturl($url, $depth = 0){
+
+		if ($depth == 20) return $url;
 
 		if (!function_exists('curl_init'))
 			return user_error('CURL Must be installed for geturl function to work. Ask your host to enable it or uncomment extension=php_curl.dll in php.ini', E_USER_ERROR);
@@ -4122,6 +4163,10 @@
 		curl_setopt($curl, CURLOPT_TIMEOUT, 60);
 		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 
+		if ((OPENSSL_VERSION_NUMBER >= 0x0090808f) && (OPENSSL_VERSION_NUMBER < 0x10000000)) {
+			curl_setopt($curl, CURLOPT_SSLVERSION, 3);
+		}
+
 		$html = curl_exec($curl);
 
 		$status = curl_getinfo($curl);
@@ -4134,7 +4179,7 @@
 				preg_match("/(Location:|URI:)[^(\n)]*/", $header, $matches);
 				$url = trim(str_replace($matches[1],"",$matches[0]));
 				$url_parsed = parse_url($url);
-				return (isset($url_parsed))? geturl($url):'';
+				return (isset($url_parsed))? geturl($url, $depth + 1):'';
 			}
 
 			global $fetch_last_error;
@@ -4239,16 +4284,21 @@
 		}
 
 		function ngettext(msg1, msg2, n) {
-			return (parseInt(n) > 1) ? msg2 : msg1;
+			return __((parseInt(n) > 1) ? msg2 : msg1);
 		}';
 
 		$l10n = _get_reader();
 
 		for ($i = 0; $i < $l10n->total; $i++) {
 			$orig = $l10n->get_original_string($i);
-			$translation = __($orig);
-
-			print T_js_decl($orig, $translation);
+			if(strpos($orig, "\000") !== FALSE) { // Plural forms
+				$key = explode(chr(0), $orig);
+				print T_js_decl($key[0], _ngettext($key[0], $key[1], 1)); // Singular
+				print T_js_decl($key[1], _ngettext($key[0], $key[1], 2)); // Plural
+			} else {
+				$translation = __($orig);
+				print T_js_decl($orig, $translation);
+			}
 		}
 	}
 
