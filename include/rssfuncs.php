@@ -258,7 +258,7 @@
 		if (file_exists($cache_filename) &&
 			is_readable($cache_filename) &&
 			!$auth_login && !$auth_pass &&
-			filemtime($cache_filename) > time() - 30) {
+			filemtime($cache_filename) > time() - 45*60) {
 
 			_debug("using local cache.", $debug_enabled);
 
