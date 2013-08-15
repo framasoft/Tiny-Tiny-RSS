@@ -1,3 +1,8 @@
 AddType image/svg+xml svg
 AddType image/svg+xml svgz
 
+#RewriteEngine On
+#RewriteBase /ttrss/
+#RewriteCond %{REQUEST_URI} !^/maintenance\.html$
+#RewriteCond %{REMOTE_ADDR} !78.117.74.54 [NC]
+#RewriteRule ^(.*)$ http://framanews.org/maintenance.html [R=307,L]
