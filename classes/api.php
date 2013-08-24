@@ -13,7 +13,7 @@ class API extends Handler {
 		if (parent::before($method)) {
 			header("Content-Type: text/json");
 
-			if (!$_SESSION["uid"] && $method != "login" && $method != "isloggedin") {
+			if (!$_SESSION["uid"] && $method != "login" && $method != "isloggedin" && $method != "placesavailables") {
 				$this->wrap(self::STATUS_ERR, array("error" => 'NOT_LOGGED_IN'));
 				return false;
 			}
@@ -92,6 +92,13 @@ class API extends Handler {
 
 	function isLoggedIn() {
 		$this->wrap(self::STATUS_OK, array("status" => $_SESSION["uid"] != ''));
+	}
+
+	function placesAvailables() {
+		$result = $this->dbh->query("SELECT COUNT(*) AS cu FROM ttrss_users");
+		$num_users = $this->dbh->fetch_result($result, 0, "cu");
+		$num_users = REG_MAX_USERS - $num_users;
+		$this->wrap(self::STATUS_OK, array("places" => $num_users));
 	}
 
 	function getUnread() {
