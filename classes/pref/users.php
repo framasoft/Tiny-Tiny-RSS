@@ -198,6 +198,19 @@ class Pref_Users extends Handler_Protected {
 
 			foreach ($ids as $id) {
 				if ($id != $_SESSION["uid"] && $id != 1) {
+					if (defined('SYMPA_ADDRESS') && defined('SYMPA_ML')) {
+						$result = db_query("SELECT email FROM ttrss_users WHERE id = ".$id);
+						if (db_num_rows($result) != 0) {
+							$email = db_fetch_result($result, 0, "email");
+
+							$mail = new ttrssMailer();
+							$mail->IsHTML(false);
+							$rc = $mail->quickMail(SYMPA_ADDRESS, "", "unsubscribe ".SYMPA_ML." ".$email, "Unsubscribe if you want", false);
+
+							if (!$rc) print_error($mail->ErrorInfo);
+						}
+					}
+
 					$this->dbh->query("DELETE FROM ttrss_tags WHERE owner_uid = '$id'");
 					$this->dbh->query("DELETE FROM ttrss_feeds WHERE owner_uid = '$id'");
 					$this->dbh->query("DELETE FROM ttrss_users WHERE id = '$id'");
