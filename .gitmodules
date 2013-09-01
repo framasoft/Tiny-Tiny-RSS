@@ -7,3 +7,6 @@
 [submodule "plugins/quota"]
 	path = plugins/quota
 	url = https://github.com/framasoft/framanews_quota.git
+[submodule "plugins/af_tapastic"]
+	path = plugins/af_tapastic
+	url = https://github.com/ldidry/af_tapastic.git
