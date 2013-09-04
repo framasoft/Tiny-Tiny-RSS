@@ -131,8 +131,12 @@
 
 		// Here is a little cache magic in order to minimize risk of double feed updates.
 		$feeds_to_update = array();
+		$temp_hash = array();
 		while ($line = db_fetch_assoc($result)) {
-			array_push($feeds_to_update, db_escape_string($line['feed_url']));
+			$temp_hash[db_escape_string($line['feed_url'])] = 1;
+		}
+		foreach($temp_hash as $k => $v) {
+			array_push($feeds_to_update, $k);
 		}
 
 		// We update the feed last update started date before anything else.
@@ -143,7 +147,7 @@
 			$feeds_quoted = array();
 
 			foreach ($feeds_to_update as $feed) {
-				array_push($feeds_quoted, "'" . db_escape_string($feed) . "'");
+				array_push($feeds_quoted, "'" . $feed . "'");
 			}
 
 			db_query(sprintf("UPDATE ttrss_feeds SET last_update_started = NOW()
@@ -165,7 +169,7 @@
 				ttrss_user_prefs.owner_uid = ttrss_feeds.owner_uid AND
 				ttrss_users.id = ttrss_user_prefs.owner_uid AND
 				ttrss_user_prefs.pref_name = 'DEFAULT_UPDATE_INTERVAL' AND
-				feed_url = '".db_escape_string($feed)."' AND
+				feed_url = '".$feed."' AND
 				(ttrss_feeds.update_interval > 0 OR
 					ttrss_user_prefs.value != '-1')
 				$login_thresh_qpart
@@ -251,7 +255,8 @@
 		$pluginhost->load_data();
 
 		$rss = false;
-		$rss_hash = false;
+		//$rss_hash = false;
+		$use_cache = 0;
 
 		$force_refetch = isset($_REQUEST["force_refetch"]);
 
@@ -265,7 +270,8 @@
 			@$feed_data = file_get_contents($cache_filename);
 
 			if ($feed_data) {
-				$rss_hash = sha1($feed_data);
+				//$rss_hash = sha1($feed_data);
+				$use_cache = 1;
 			}
 
 		} else {
@@ -285,7 +291,7 @@
 				$feed_data = fetch_file_contents($fetch_url, false,
 					$auth_login, $auth_pass, false,
 					$no_cache ? FEED_FETCH_NO_CACHE_TIMEOUT : FEED_FETCH_TIMEOUT,
-					$force_refetch ? 0 : $last_article_timestamp);
+					0);
 
 				global $fetch_curl_used;
 
@@ -362,9 +368,9 @@
 
 			// cache data for later
 			if (!$auth_pass && !$auth_login && is_writable(CACHE_DIR . "/simplepie")) {
-				$new_rss_hash = sha1($rss_data);
+				//$new_rss_hash = sha1($rss_data);
 
-				if ($new_rss_hash != $rss_hash && count($rss->get_items()) > 0 ) {
+				if ($use_cache == 0  && count($rss->get_items()) > 0 ) {
 					_debug("saving $cache_filename", $debug_enabled);
 					@file_put_contents($cache_filename, $feed_data);
 				}
