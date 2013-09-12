@@ -1216,7 +1216,7 @@ function cdmScrollToArticleId(id, force) {
 				e.offsetTop < ctr.scrollTop) {
 
 			// expanded cdm has a 4px margin now
-			ctr.scrollTop = parseInt(e.offsetTop) - 4;
+			ctr.scrollTop = parseInt(e.offsetTop) + 1;
 		}
 
 	} catch (e) {
