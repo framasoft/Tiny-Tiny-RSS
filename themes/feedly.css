@@ -1160,7 +1160,7 @@ a:hover {
 }
 .cdm.expandable.active .title,
 .cdm.expanded .title {
-	font: normal normal bold 24px/28px SansCn;
+	font: normal normal bold 24px/28px Sans;
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 }
