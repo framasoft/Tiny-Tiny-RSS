@@ -8,6 +8,7 @@ var post_under_pointer = false;
 var last_requested_article = false;
 
 var catchup_id_batch = [];
+var catchup_go_next = false;
 var catchup_timeout_id = false;
 
 var cids_requested = [];
@@ -87,8 +88,12 @@ function headlines_callback2(transport, offset, background, infscroll_req) {
 				dijit.byId("headlines-frame").attr('content',
 					reply['headlines']['content']);
 
-				dijit.byId("headlines-toolbar").attr('content',
-					reply['headlines']['toolbar']);
+				//dijit.byId("headlines-toolbar").attr('content',
+				//	reply['headlines']['toolbar']);
+
+				dojo.html.set($("headlines-toolbar"),
+						reply['headlines']['toolbar'],
+						{parseContent: true});
 
 				$$("#headlines-frame > div[id*=RROW]").each(function(row) {
 					if (loaded_article_ids.indexOf(row.id) != -1) {
@@ -190,14 +195,11 @@ function headlines_callback2(transport, offset, background, infscroll_req) {
 			else
 				request_counters(true);
 
-		} else if (transport.responseText) {
+		} else {
 			console.error("Invalid object received: " + transport.responseText);
 			dijit.byId("headlines-frame").attr('content', "<div class='whiteBox'>" +
 					__('Could not update headlines (invalid object received - see error console for details)') +
 					"</div>");
-		} else {
-			//notify_error("Error communicating with server.");
-			Element.show(dijit.byId("net-alert").domNode);
 		}
 
 		_infscroll_request_sent = 0;
@@ -314,13 +316,11 @@ function article_callback2(transport, id) {
 //				return;
 //			}
 
-		} else if (transport.responseText) {
+		} else {
 			console.error("Invalid object received: " + transport.responseText);
 
 			render_article("<div class='whiteBox'>" +
 					__('Could not display article (invalid object received - see error console for details)') + "</div>");
-		} else {
-			Element.show(dijit.byId("net-alert").domNode);
 		}
 
 		var unread_in_buffer = $$("#headlines-frame > div[id*=RROW][class*=Unread]").length
@@ -961,10 +961,12 @@ function getLoadedArticleIds() {
 }
 
 // mode = all,none,unread,invert,marked,published
-function selectArticles(mode) {
+function selectArticles(mode, query) {
 	try {
 
-		var children = $$("#headlines-frame > div[id*=RROW]");
+		if (!query) query = "#headlines-frame > div[id*=RROW]";
+
+		var children = $$(query);
 
 		children.each(function(child) {
 			var id = child.id.replace("RROW-", "");
@@ -1243,7 +1245,7 @@ function postMouseOut(id) {
 
 function unpackVisibleHeadlines() {
 	try {
-		if (!isCdmMode()) return;
+		if (!isCdmMode() || !getInitParam("cdm_expanded")) return;
 
 		$$("#headlines-frame > div[id*=RROW]").each(
 			function(child) {
@@ -1275,9 +1277,9 @@ function headlines_scroll_handler(e) {
 		unpackVisibleHeadlines();
 
 		// set topmost child in the buffer as active
-		if (getInitParam("cdm_auto_catchup") == 1 &&
+		if (isCdmMode() && getInitParam("cdm_auto_catchup") == 1 &&
 				getSelectedArticleIds2().length <= 1 &&
-				(!isCdmMode() || getInitParam("cdm_expanded"))) {
+				getInitParam("cdm_expanded")) {
 			var rows = $$("#headlines-frame > div[id*=RROW]");
 
 			for (var i = 0; i < rows.length; i++) {
@@ -1327,6 +1329,8 @@ function headlines_scroll_handler(e) {
 			var ts = new Date().getTime();
 			if (ts - _last_headlines_update < 100) return;
 
+			var atend = true;
+
 			$$("#headlines-frame > div[id*=RROW][class*=Unread]").each(
 				function(child) {
 					if (child.hasClassName("Unread") && $("headlines-frame").scrollTop >
@@ -1338,9 +1342,17 @@ function headlines_scroll_handler(e) {
 							catchup_id_batch.push(id);
 
 						//console.log("auto_catchup_batch: " + catchup_id_batch.toString());
+					} else {
+						atend = false;
 					}
 
 				});
+
+			if (atend) {
+				if (getInitParam("on_catchup_show_next_feed") == "1") {
+					catchup_go_next = true;
+				}
+			}
 
 			if (catchup_id_batch.length > 0) {
 				window.clearTimeout(catchup_timeout_id);
@@ -1386,6 +1398,12 @@ function catchupBatchedArticles() {
 					updateFloatingTitle(true);
 
 				} });
+		}
+		if (catchup_go_next) {
+			catchup_go_next = false;
+			var is_cat = activeFeedIsCat();
+			var nuf = getNextUnreadFeed(getActiveFeedId(), is_cat);
+			if (nuf) viewfeed(nuf, '', is_cat);
 		}
 
 	} catch (e) {
@@ -1761,7 +1779,8 @@ function cdmClicked(event, id) {
 				return !event.shiftKey;
 			}
 
-		} else {
+		} else if (event.target.parents(".cdmHeader").length > 0) {
+
 			toggleSelected(id, true);
 
 			var elem = $("RROW-" + id);
@@ -2106,6 +2125,72 @@ function initHeadlinesMenu() {
 		headlinesMenuCommon(menu, false);
 
 		menu.startup();
+
+		/* vgroup feed title menu */
+
+		var nodes = $$("#headlines-frame > div[class='cdmFeedTitle']");
+		var ids = [];
+
+		nodes.each(function(node) {
+			ids.push(node.id);
+		});
+
+		if (ids.length > 0) {
+			if (dijit.byId("headlinesFeedTitleMenu"))
+				dijit.byId("headlinesFeedTitleMenu").destroyRecursive();
+
+			var menu = new dijit.Menu({
+				id: "headlinesFeedTitleMenu",
+				targetNodeIds: ids,
+			});
+
+			var tmph = dojo.connect(menu, '_openMyself', function (event) {
+				var callerNode = event.target, match = null, tries = 0;
+
+				while (match == null && callerNode && tries <= 3) {
+					console.log(callerNode.id);
+
+					match = callerNode.id.match("^[A-Z]+[-]([0-9]+)$");
+					callerNode = callerNode.parentNode;
+					++tries;
+
+					console.log(match[1]);
+				}
+
+				if (match) this.callerRowId = parseInt(match[1]);
+
+			});
+
+			menu.addChild(new dijit.MenuItem({
+				label: __("Select articles in group"),
+				onClick: function(event) {
+					selectArticles("all",
+						"#headlines-frame > div[id*=RROW]"+
+						"[orig-feed-id='"+menu.callerRowId+"']");
+
+				}}));
+
+			menu.addChild(new dijit.MenuItem({
+				label: __("Mark group as read"),
+				onClick: function(event) {
+					selectArticles("none");
+					selectArticles("all",
+						"#headlines-frame > div[id*=RROW]"+
+						"[orig-feed-id='"+menu.callerRowId+"']");
+
+					catchupSelection();
+				}}));
+
+
+			menu.addChild(new dijit.MenuItem({
+				label: __("Mark feed as read"),
+				onClick: function(event) {
+					catchupFeedInGroup(menu.callerRowId);
+				}}));
+
+			menu.startup();
+
+		}
 
 	} catch (e) {
 		exception_error("initHeadlinesMenu", e);

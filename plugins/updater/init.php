@@ -236,6 +236,7 @@ class Updater extends Plugin {
 					CACHE_DIR . "/images",
 					CACHE_DIR . "/js",
 					CACHE_DIR . "/simplepie",
+					CACHE_DIR . "/upload",
 					ICONS_DIR,
 					LOCK_DIRECTORY);
 
@@ -341,6 +342,10 @@ class Updater extends Plugin {
 
 			} else {
 				print_notice(__("Your Tiny Tiny RSS installation is up to date."));
+
+				print "<br/> <button dojoType=\"dijit.form.Button\" onclick=\"return updateSelf()\">".
+					__('Force update')."</button></p>";
+
 			}
 
 			print "</div>"; #pane
