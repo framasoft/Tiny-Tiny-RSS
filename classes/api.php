@@ -2,7 +2,7 @@
 
 class API extends Handler {
 
-	const API_LEVEL  = 7;
+	const API_LEVEL  = 9;
 
 	const STATUS_OK  = 0;
 	const STATUS_ERR = 1;
@@ -77,6 +77,7 @@ class API extends Handler {
 				$this->wrap(self::STATUS_OK,	array("session_id" => session_id(),
 					"api_level" => self::API_LEVEL));
 			} else {                                                         // else we are not logged in
+				user_error("Failed login attempt for $login from {$_SERVER['REMOTE_ADDR']}", E_USER_WARNING);
 				$this->wrap(self::STATUS_ERR, array("error" => "LOGIN_ERROR"));
 			}
 		} else {
@@ -206,9 +207,13 @@ class API extends Handler {
 			$include_nested = sql_bool_to_bool($_REQUEST["include_nested"]);
 			$sanitize_content = !isset($_REQUEST["sanitize"]) ||
 				sql_bool_to_bool($_REQUEST["sanitize"]);
+			$force_update = sql_bool_to_bool($_REQUEST["force_update"]);
 
 			$override_order = false;
 			switch ($_REQUEST["order_by"]) {
+				case "title":
+					$override_order = "ttrss_entries.title";
+					break;
 				case "date_reverse":
 					$override_order = "score DESC, date_entered, updated";
 					break;
@@ -225,7 +230,7 @@ class API extends Handler {
 			$headlines = $this->api_get_headlines($feed_id, $limit, $offset,
 				$filter, $is_cat, $show_excerpt, $show_content, $view_mode, $override_order,
 				$include_attachments, $since_id, $search, $search_mode,
-				$include_nested, $sanitize_content);
+				$include_nested, $sanitize_content, $force_update);
 
 			$this->wrap(self::STATUS_OK, $headlines);
 		} else {
@@ -317,7 +322,7 @@ class API extends Handler {
 		if ($article_id) {
 
 			$query = "SELECT id,title,link,content,feed_id,comments,int_id,
-				marked,unread,published,score,
+				marked,unread,published,score,note,lang,
 				".SUBSTRING_FOR_DATE."(updated,1,16) as updated,
 				author,(SELECT title FROM ttrss_feeds WHERE id = feed_id) AS feed_title
 				FROM ttrss_entries,ttrss_user_entries
@@ -349,7 +354,9 @@ class API extends Handler {
 						"feed_id" => $line["feed_id"],
 						"attachments" => $attachments,
 						"score" => (int)$line["score"],
-						"feed_title" => $line["feed_title"]
+						"feed_title" => $line["feed_title"],
+						"note" => $line["note"],
+						"lang" => $line["lang"]
 					);
 
 					foreach (PluginHost::getInstance()->get_hooks(PluginHost::HOOK_RENDER_ARTICLE_API) as $p) {
@@ -430,14 +437,14 @@ class API extends Handler {
 
 			$checked = false;
 			foreach ($article_labels as $al) {
-				if ($al[0] == $line['id']) {
+				if (feed_to_label_id($al[0]) == $line['id']) {
 					$checked = true;
 					break;
 				}
 			}
 
 			array_push($rv, array(
-				"id" => (int)$line['id'],
+				"id" => (int)label_to_feed_id($line['id']),
 				"caption" => $line['caption'],
 				"fg_color" => $line['fg_color'],
 				"bg_color" => $line['bg_color'],
@@ -454,7 +461,7 @@ class API extends Handler {
 		$assign = (bool) $this->dbh->escape_string($_REQUEST['assign']) == "true";
 
 		$label = $this->dbh->escape_string(label_find_caption(
-			$label_id, $_SESSION["uid"]));
+			feed_to_label_id($label_id), $_SESSION["uid"]));
 
 		$num_updated = 0;
 
@@ -518,7 +525,7 @@ class API extends Handler {
 					if ($unread || !$unread_only) {
 
 						$row = array(
-								"id" => $cv["id"],
+								"id" => (int) $cv["id"],
 								"title" => $cv["description"],
 								"unread" => $cv["counter"],
 								"cat_id" => -2,
@@ -564,7 +571,7 @@ class API extends Handler {
 
 					if ($unread || !$unread_only) {
 						$row = array(
-								"id" => $line["id"],
+								"id" => (int) $line["id"],
 								"title" => $line["title"],
 								"unread" => $unread,
 								"is_cat" => true,
@@ -633,7 +640,28 @@ class API extends Handler {
 				$filter, $is_cat, $show_excerpt, $show_content, $view_mode, $order,
 				$include_attachments, $since_id,
 				$search = "", $search_mode = "",
-				$include_nested = false, $sanitize_content = true) {
+				$include_nested = false, $sanitize_content = true, $force_update = false) {
+
+			if ($force_update && $feed_id > 0 && is_numeric($feed_id)) {
+				// Update the feed if required with some basic flood control
+
+				$result = db_query(
+					"SELECT cache_images,".SUBSTRING_FOR_DATE."(last_updated,1,19) AS last_updated
+						FROM ttrss_feeds WHERE id = '$feed_id'");
+
+				if (db_num_rows($result) != 0) {
+					$last_updated = strtotime(db_fetch_result($result, 0, "last_updated"));
+					$cache_images = sql_bool_to_bool(db_fetch_result($result, 0, "cache_images"));
+
+					if (!$cache_images && time() - $last_updated > 120) {
+						include "rssfuncs.php";
+						update_rss_feed($feed_id, true, true);
+					} else {
+						db_query("UPDATE ttrss_feeds SET last_updated = '1970-01-01', last_update_started = '1970-01-01'
+							WHERE id = '$feed_id'");
+					}
+				}
+			}
 
 			$qfh_ret = queryFeedHeadlines($feed_id, $limit,
 				$view_mode, $is_cat, $search, $search_mode,
@@ -645,7 +673,7 @@ class API extends Handler {
 			$headlines = array();
 
 			while ($line = db_fetch_assoc($result)) {
-				$line["content_preview"] = truncate_string(strip_tags($line["content_preview"]), 100);
+				$line["content_preview"] = truncate_string(strip_tags($line["content"]), 100);
 				foreach (PluginHost::getInstance()->get_hooks(PluginHost::HOOK_QUERY_HEADLINES) as $p) {
 					$line = $p->hook_query_headlines($line, 100, true);
 				}
@@ -654,7 +682,22 @@ class API extends Handler {
 					($line["unread"] != "t" && $line["unread"] != "1"));
 
 				$tags = explode(",", $line["tag_cache"]);
-				$labels = json_decode($line["label_cache"], true);
+
+				$label_cache = $line["label_cache"];
+				$labels = false;
+
+				if ($label_cache) {
+					$label_cache = json_decode($label_cache, true);
+
+					if ($label_cache) {
+						if ($label_cache["no-labels"] == 1)
+							$labels = array();
+						else
+							$labels = $label_cache;
+					}
+				}
+
+				if (!is_array($labels)) $labels = get_article_labels($line["id"]);
 
 				//if (!$tags) $tags = get_article_tags($line["id"]);
 				//if (!$labels) $labels = get_article_labels($line["id"]);
@@ -676,7 +719,7 @@ class API extends Handler {
 					$headline_row['attachments'] = get_article_enclosures(
 						$line['id']);
 
-				if (!$show_excerpt)
+				if ($show_excerpt)
 					$headline_row["excerpt"] = $line["content_preview"];
 
 				if ($show_content) {
@@ -685,7 +728,7 @@ class API extends Handler {
 						$headline_row["content"] = sanitize(
 							$line["content"],
 							sql_bool_to_bool($line['hide_images']),
-							false, $line["site_url"]);
+							false, $line["site_url"], false, $line["id"]);
 					} else {
 						$headline_row["content"] = $line["content"];
 					}
@@ -707,6 +750,8 @@ class API extends Handler {
 				$headline_row["author"] = $line["author"];
 
 				$headline_row["score"] = (int)$line["score"];
+				$headline_row["note"] = $line["note"];
+				$headline_row["lang"] = $line["lang"];
 
 				foreach (PluginHost::getInstance()->get_hooks(PluginHost::HOOK_RENDER_ARTICLE_API) as $p) {
 					$headline_row = $p->hook_render_article_api(array("headline" => $headline_row));
