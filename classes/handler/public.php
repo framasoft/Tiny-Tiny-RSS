@@ -39,11 +39,10 @@ class Handler_Public extends Handler {
 
 		//function queryFeedHeadlines($feed, $limit, $view_mode, $cat_view, $search, $search_mode, $override_order = false, $offset = 0, $owner_uid = 0, $filter = false, $since_id = 0, $include_children = false, $ignore_vfeed_group = false, $override_strategy = false, $override_vfeed = false, $start_ts = false) {
 
-
 		$qfh_ret = queryFeedHeadlines($feed,
 			1, $view_mode, $is_cat, $search, $search_mode,
 			$date_sort_field, $offset, $owner_uid,
-			false, 0, false, true, false, false, $start_ts);
+			false, 0, true, true, false, false, $start_ts);
 
 		$result = $qfh_ret[0];
 
@@ -64,7 +63,7 @@ class Handler_Public extends Handler {
 		$qfh_ret = queryFeedHeadlines($feed,
 			$limit, $view_mode, $is_cat, $search, $search_mode,
 			$date_sort_field, $offset, $owner_uid,
-			false, 0, false, true, false, false, $start_ts);
+			false, 0, true, true, false, false, $start_ts);
 
 
 		$result = $qfh_ret[0];
@@ -428,8 +427,7 @@ class Handler_Public extends Handler {
 		}
 
 		header('Content-Type: text/html; charset=utf-8');
-		print "<html><head><title>Framanews</title>";
-
+		print "<html><head><title>Framanews</title>
 		<link rel=\"shortcut icon\" type=\"image/png\" href=\"images/favicon.png\">
 		<link rel=\"icon\" type=\"image/png\" sizes=\"72x72\" href=\"images/favicon-72px.png\">";
 
@@ -718,7 +716,7 @@ class Handler_Public extends Handler {
 		@$hash = $_REQUEST["hash"];
 
 		header('Content-Type: text/html; charset=utf-8');
-		print "<html><head><title>Framanews</title>";
+		print "<html><head><title>Framanews</title>
 		<link rel=\"shortcut icon\" type=\"image/png\" href=\"images/favicon.png\">
 		<link rel=\"icon\" type=\"image/png\" sizes=\"72x72\" href=\"images/favicon-72px.png\">";
 
