@@ -56,7 +56,8 @@ div.cdmContentInner {
 	font-size : 15px;
 }
 
-div.cdmContentInner img {
+div.cdmContentInner img,
+div.cdmContentInner video {
 	border-width : 0px;
 	max-width : 98%;
 	height : auto;
@@ -212,17 +213,14 @@ div.cdmContent div.postEnclosures {
 }
 
 div.cdmFeedTitle {
-	border-color : #a0a0a0;
+	border-color : #4684ff;
 	border-width : 0px 0px 1px 0px;
 	border-style : solid;
 	padding : 5px 3px 5px 5px;
-	background : url("../images/toolbar.png") bottom left;
-	background-repeat : repeat-x;
 }
 
 div.cdmFeedTitle a.title {
 	color : #555;
-	font-style : italic;
 	font-weight : bold;
 }
 
@@ -263,6 +261,7 @@ div.cdmContentInner p {
 
 div.cdmContentInner iframe {
 	min-width : 50%;
+	max-width : 98%;
 }
 
 div.cdmHeader span.author {

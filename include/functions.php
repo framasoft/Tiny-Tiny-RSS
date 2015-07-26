@@ -1,6 +1,6 @@
 <?php
 	define('EXPECTED_CONFIG_VERSION', 26);
-	define('SCHEMA_VERSION', 126);
+	define('SCHEMA_VERSION', 127);
 
 	define('LABEL_BASE_INDEX', -1024);
 	define('PLUGIN_FEED_BASE_INDEX', -128);
@@ -10,8 +10,11 @@
 	$fetch_last_error = false;
 	$fetch_last_error_code = false;
 	$fetch_last_content_type = false;
+	$fetch_last_error_content = false; // curl only for the time being
 	$fetch_curl_used = false;
 	$suppress_debugging = false;
+
+	libxml_disable_entity_loader(true);
 
 	mb_internal_encoding("UTF-8");
 	date_default_timezone_set('UTC');
@@ -63,6 +66,8 @@
 	function get_translations() {
 		$tr = array(
 					"auto"  => "Détection automatique",
+					"ar_SA" => "العربيّة (Arabic)",
+					"bg_BG" => "Bulgarian",
 					"da_DA" => "Dansk",
 					"ca_CA" => "Català",
 					"cs_CZ" => "Česky",
@@ -93,8 +98,6 @@
 
 	require_once "lib/accept-to-gettext.php";
 	require_once "lib/gettext/gettext.inc";
-
-	require_once "lib/languagedetect/LanguageDetect.php";
 
 	function startup_gettext() {
 
@@ -317,7 +320,7 @@
 
 		// purge orphaned posts in main content table
 		$result = db_query("DELETE FROM ttrss_entries WHERE
-			(SELECT COUNT(int_id) FROM ttrss_user_entries WHERE ref_id = id) = 0");
+			NOT EXISTS (SELECT ref_id FROM ttrss_user_entries WHERE ref_id = id)");
 
 		if ($do_output) {
 			$rows = db_affected_rows($result);
@@ -348,16 +351,21 @@
 
 		global $fetch_last_error;
 		global $fetch_last_error_code;
+		global $fetch_last_error_content;
 		global $fetch_last_content_type;
 		global $fetch_curl_used;
 
+		$url = ltrim($url, ' ');
 		$url = str_replace(' ', '%20', $url);
+
+		if (strpos($url, "//") === 0)
+			$url = 'http:' . $url;
 
 		if (!defined('NO_CURL') && function_exists('curl_init')) {
 
 			$fetch_curl_used = true;
 
-			if (ini_get("safe_mode") || ini_get("open_basedir")) {
+			if (ini_get("safe_mode") || ini_get("open_basedir") || defined("FORCE_GETURL")) {
 				$new_url = geturl($url);
 				if (!$new_url) {
 				    // geturl has already populated $fetch_last_error
@@ -399,10 +407,6 @@
 				curl_setopt($ch, CURLOPT_POSTFIELDS, $post_query);
 			}
 
-			if ((OPENSSL_VERSION_NUMBER >= 0x0090808f) && (OPENSSL_VERSION_NUMBER < 0x10000000)) {
-				curl_setopt($ch, CURLOPT_SSLVERSION, 3);
-			}
-
 			if ($login && $pass)
 				curl_setopt($ch, CURLOPT_USERPWD, "$login:$pass");
 
@@ -430,6 +434,7 @@
 				} else {
 					$fetch_last_error = "HTTP Code: $http_code";
 				}
+				$fetch_last_error_content = $contents;
 				curl_close($ch);
 				return false;
 			}
@@ -814,7 +819,7 @@
 
 		db_query("insert into ttrss_feeds (owner_uid,title,feed_url)
 			values ('$uid', 'Framablog',
-				'http://www.framablog.org/index.php/feed/atom')");
+				'http://framablog.org/feed/')");
 	}
 
 	function logout_user() {
@@ -920,7 +925,7 @@
 	}
 
 	function make_local_datetime($timestamp, $long, $owner_uid = false,
-					$no_smart_dt = false) {
+					$no_smart_dt = false, $eta_min = false) {
 
 		if (!$owner_uid) $owner_uid = $_SESSION['uid'];
 		if (!$timestamp) $timestamp = '1970-01-01 0:00';
@@ -955,7 +960,7 @@
 
 		if (!$no_smart_dt) {
 			return smart_date_time($user_timestamp,
-				$tz_offset, $owner_uid);
+				$tz_offset, $owner_uid, $eta_min);
 		} else {
 			if ($long)
 				$format = get_pref('LONG_DATE_FORMAT', $owner_uid);
@@ -966,10 +971,12 @@
 		}
 	}
 
-	function smart_date_time($timestamp, $tz_offset = 0, $owner_uid = false) {
+	function smart_date_time($timestamp, $tz_offset = 0, $owner_uid = false, $eta_min = false) {
 		if (!$owner_uid) $owner_uid = $_SESSION['uid'];
 
-		if (date("Y.m.d", $timestamp) == date("Y.m.d", time() + $tz_offset)) {
+		if ($eta_min && time() + $tz_offset - $timestamp < 3600) {
+			return T_sprintf("%d min", date("i", time() + $tz_offset - $timestamp));
+		} else if (date("Y.m.d", $timestamp) == date("Y.m.d", time() + $tz_offset)) {
 			return date("G:i", $timestamp);
 		} else if (date("Y", $timestamp) == date("Y", time() + $tz_offset)) {
 			$format = get_pref('SHORT_DATE_FORMAT', $owner_uid);
@@ -1716,18 +1723,6 @@
 			$url = key($feedUrls);
 		}
 
-		/* libxml_use_internal_errors(true);
-		$doc = new DOMDocument();
-		$doc->loadXML($contents);
-		$error = libxml_get_last_error();
-		libxml_clear_errors();
-
-		if ($error) {
-			$error_message = format_libxml_error($error);
-
-			return array("code" => 6, "message" => $error_message);
-		} */
-
 		if ($cat_id == "0" || !$cat_id) {
 			$cat_qpart = "NULL";
 		} else {
@@ -1762,7 +1757,7 @@
 			$feed_id = db_fetch_result($result, 0, "id");
 
 			if ($feed_id) {
-				update_rss_feed($feed_id, true);
+				set_basic_feed_info($feed_id);
 			}
 
 			return array("code" => 1);
@@ -1982,8 +1977,6 @@
 	function getFeedTitle($id, $cat = false) {
 		if ($cat) {
 			return getCategoryTitle($id);
-		} else if ($id == 0) {
-			return __("All feeds");
 		} else if ($id == -1) {
 			return __("Starred articles");
 		} else if ($id == -2) {
