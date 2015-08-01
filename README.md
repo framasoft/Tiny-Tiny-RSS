@@ -31,3 +31,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Copyright (c) 2005 Andrew Dolgov (unless explicitly stated otherwise).
 
 Uses Silk icons by Mark James: http://www.famfamfam.com/lab/icons/silk/
+
+Modifications by Framasoft
+==========================
+
+We translated some hard-coded strings, like the subscription mail.
+
+We added some themes.
+
+We added some plugins as git submodules.
+
+To use our fork, do as follows:
+
+```
+git clone https://git.framasoft.org/framasoft/framanews_ttrss.git framanews
+cd framanews
+git submodule init
+git submodule update
+```
+
+Then, you can follow the official installation guide at <https://tt-rss.org/gitlab/fox/tt-rss/wikis/InstallationNotes>
