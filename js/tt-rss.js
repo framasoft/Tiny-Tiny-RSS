@@ -231,6 +231,7 @@ function init() {
 		dojo.require("dijit.form.Select");
 		dojo.require("dijit.form.SimpleTextarea");
 		dojo.require("dijit.form.TextBox");
+		dojo.require("dijit.form.ComboBox");
 		dojo.require("dijit.form.ValidationTextBox");
 		dojo.require("dijit.InlineEditBox");
 		dojo.require("dijit.layout.AccordionContainer");
@@ -301,21 +302,27 @@ function init() {
 		hotkey_actions["collapse_article"] = function() {
 				var id = getActiveArticleId();
 				var elem = $("CICD-"+id);
-				if(elem.visible()) {
-					cdmCollapseArticle(null, id);
-				}
-				else {
-					cdmExpandArticle(id);
+
+				if (elem) {
+					if (elem.visible()) {
+						cdmCollapseArticle(null, id);
+					}
+					else {
+						cdmExpandArticle(id);
+					}
 				}
 		};
 		hotkey_actions["toggle_expand"] = function() {
 				var id = getActiveArticleId();
 				var elem = $("CICD-"+id);
-				if(elem.visible()) {
-					cdmCollapseArticle(null, id, false);
-				}
-				else {
-					cdmExpandArticle(id);
+
+				if (elem) {
+					if (elem.visible()) {
+						cdmCollapseArticle(null, id, false);
+					}
+					else {
+						cdmExpandArticle(id);
+					}
 				}
 		};
 		hotkey_actions["search_dialog"] = function() {
@@ -415,10 +422,12 @@ function init() {
 				quickAddFeed();
 		};
 		hotkey_actions["feed_debug_update"] = function() {
-				window.open("backend.php?op=feeds&method=view&feed=" + getActiveFeedId() +
-					"&view_mode=adaptive&order_by=default&update=&m=ForceUpdate&cat=" +
-					activeFeedIsCat() + "&DevForceUpdate=1&debug=1&xdebug=1&csrf_token=" +
-					getInitParam("csrf_token"));
+			if (!activeFeedIsCat() && parseInt(getActiveFeedId()) > 0) {
+				window.open("backend.php?op=feeds&method=update_debugger&feed_id=" + getActiveFeedId() +
+				"&csrf_token=" + getInitParam("csrf_token"));
+			} else {
+				alert("You can't debug this kind of feed.");
+			}
 		};
 		hotkey_actions["feed_edit"] = function() {
 				if (activeFeedIsCat())
@@ -500,7 +509,13 @@ function init() {
 				if (!isCdmMode()) {
 					_widescreen_mode = !_widescreen_mode;
 
+					// reset stored sizes because geometry changed
+					setCookie("ttrss_ci_width", 0);
+					setCookie("ttrss_ci_height", 0);
+
 					switchPanelMode(_widescreen_mode);
+				} else {
+					alert(__("Widescreen is not available in combined mode."));
 				}
 		};
 		hotkey_actions["help_dialog"] = function() {
@@ -553,17 +568,6 @@ function init_second_stage() {
 			if (parseInt(getCookie("ttrss_fh_width")) > 0) {
 				dijit.byId("feeds-holder").domNode.setStyle(
 					{width: getCookie("ttrss_fh_width") + "px" });
-			}
-
-			if (parseInt(getCookie("ttrss_ci_width")) > 0) {
-				if (_widescreen_mode) {
-					dijit.byId("content-insert").domNode.setStyle(
-						{width: getCookie("ttrss_ci_width") + "px" });
-
-				} else {
-					dijit.byId("content-insert").domNode.setStyle(
-						{height: getCookie("ttrss_ci_height") + "px" });
-				}
 			}
 
 			dijit.byId("main").resize();
@@ -648,9 +652,6 @@ function quickMenuGo(opid) {
 		case "qmcTagCloud":
 			displayDlg(__("Tag cloud"), "printTagCloud");
 			break;
-		case "qmcTagSelect":
-			displayDlg(__("Select item(s) by tags"), "printTagSelect");
-			break;
 		case "qmcSearch":
 			search();
 			break;
@@ -706,7 +707,13 @@ function quickMenuGo(opid) {
 			if (!isCdmMode()) {
 				_widescreen_mode = !_widescreen_mode;
 
+				// reset stored sizes because geometry changed
+				setCookie("ttrss_ci_width", 0);
+				setCookie("ttrss_ci_height", 0);
+
 				switchPanelMode(_widescreen_mode);
+			} else {
+				alert(__("Widescreen is not available in combined mode."));
 			}
 			break;
 		case "qmcHKhelp":
@@ -752,15 +759,6 @@ function parse_runtime_info(data) {
 
 //		console.log("RI: " + k + " => " + v);
 
-		if (k == "new_version_available") {
-			if (v == "1") {
-				Element.show(dijit.byId("newVersionIcon").domNode);
-			} else {
-				Element.hide(dijit.byId("newVersionIcon").domNode);
-			}
-			return;
-		}
-
 		if (k == "dep_ts" && parseInt(getInitParam("dep_ts")) > 0) {
 			if (parseInt(getInitParam("dep_ts")) < parseInt(v) && getInitParam("reload_on_ts_change")) {
 				window.location.reload();
@@ -768,12 +766,22 @@ function parse_runtime_info(data) {
 		}
 
 		if (k == "daemon_is_running" && v != 1) {
-			notify_error("<span onclick=\"javascript:explainError(1)\">Update daemon is not running.</span>", true);
+			notify_error("<span onclick=\"explainError(1)\">Update daemon is not running.</span>", true);
 			return;
 		}
 
+		if (k == "update_result") {
+			var updatesIcon = dijit.byId("updatesIcon").domNode;
+
+			if (v) {
+				Element.show(updatesIcon);
+			} else {
+				Element.hide(updatesIcon);
+			}
+		}
+
 		if (k == "daemon_stamp_ok" && v != 1) {
-			notify_error("<span onclick=\"javascript:explainError(3)\">Update daemon is not updating feeds.</span>", true);
+			notify_error("<span onclick=\"explainError(3)\">Update daemon is not updating feeds.</span>", true);
 			return;
 		}
 
@@ -964,27 +972,6 @@ function reverseHeadlineOrder() {
 	}
 }
 
-function newVersionDlg() {
-	try {
-		var query = "backend.php?op=dlg&method=newVersion";
-
-		if (dijit.byId("newVersionDlg"))
-			dijit.byId("newVersionDlg").destroyRecursive();
-
-		dialog = new dijit.Dialog({
-			id: "newVersionDlg",
-			title: __("New version available!"),
-			style: "width: 600px",
-			href: query,
-		});
-
-		dialog.show();
-
-	} catch (e) {
-		exception_error("newVersionDlg", e);
-	}
-}
-
 function handle_rpc_json(transport, scheduled_call) {
 	try {
 		var reply = JSON.parse(transport.responseText);
@@ -1077,6 +1064,11 @@ function switchPanelMode(wide) {
 				height: 'auto',
 				borderTopWidth: '0px' });
 
+			if (parseInt(getCookie("ttrss_ci_width")) > 0) {
+				dijit.byId("content-insert").domNode.setStyle(
+					{width: getCookie("ttrss_ci_width") + "px" });
+			}
+
 			$("headlines-frame").setStyle({ borderBottomWidth: '0px' });
 			$("headlines-frame").addClassName("wide");
 
@@ -1087,6 +1079,11 @@ function switchPanelMode(wide) {
 	  		dijit.byId("content-insert").domNode.setStyle({width: 'auto',
 				height: '50%',
 				borderTopWidth: '0px'});
+
+			if (parseInt(getCookie("ttrss_ci_height")) > 0) {
+				dijit.byId("content-insert").domNode.setStyle(
+					{height: getCookie("ttrss_ci_height") + "px" });
+			}
 
 			$("headlines-frame").setStyle({ borderBottomWidth: '1px' });
 			$("headlines-frame").removeClassName("wide");

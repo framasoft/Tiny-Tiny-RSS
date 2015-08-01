@@ -13,7 +13,7 @@ Tiny Tiny RSS
 Web-based news feed aggregator, designed to allow you to read news from 
 any location, while feeling as close to a real desktop application as possible.
 
-http://tt-rss.org (http://mirror.tt-rss.org)
+http://tt-rss.org
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,19 +32,29 @@ Copyright (c) 2005 Andrew Dolgov (unless explicitly stated otherwise).
 
 Uses Silk icons by Mark James: http://www.famfamfam.com/lab/icons/silk/
 
-## Requirements
+Modifications by Framasoft
+==========================
 
-* Compatible web browser (http://tt-rss.org/wiki/CompatibleBrowsers)
-* Web server, for example Apache
-* PHP (with support for mbstring functions)
-* PostgreSQL (tested on 8.3) or MySQL (InnoDB and version 4.1+ required)
-		
-## Installation Notes
+We translated some hard-coded strings, like the subscription mail.
 
-http://tt-rss.org/wiki/InstallationNotes
+We added some themes.
 
-## See also
+We added some plugins as git submodules.
 
-* FAQ: http://tt-rss.org/wiki/FrequentlyAskedQuestions
-* Forum: http://tt-rss.org/forum
-* Wiki: http://tt-rss.org/wiki/WikiStart
+To use our fork, do as follows:
+
+```
+git clone https://git.framasoft.org/framasoft/framanews_ttrss.git framanews
+cd framanews
+git submodule init
+git submodule update
+```
+
+Then, you can follow the official installation guide at <https://tt-rss.org/gitlab/fox/tt-rss/wikis/InstallationNotes>
+
+Added themes
+============
+* Paper: <https://github.com/DarkPreacher/tt-rss-theme-paper>
+* Chalk: <https://github.com/asyncopation/ttrss-theme-chalk>
+* Reeder: <https://github.com/tschinz/tt-rss_reeder_theme>
+* Feedly: <https://github.com/levito/tt-rss-feedly-theme> 
