@@ -136,8 +136,8 @@ function headlines_callback2(transport, offset, background, infscroll_req) {
 
 						if (loaded_article_ids.indexOf(row.id) == -1 || row.hasClassName("cdmFeedTitle")) {
 							dijit.byId("headlines-frame").domNode.appendChild(row);
-							Element.hide(row);
-							new Effect.Appear(row, {duration:0.5});
+							//Element.hide(row);
+							//new Effect.Appear(row, {duration:0.5});
 							loaded_article_ids.push(row.id);
 						}
 					}
@@ -236,9 +236,8 @@ function render_article(article) {
 			c.domNode.scrollTop = 0;
 		} catch (e) { };
 
-		PluginHost.run(PluginHost.HOOK_ARTICLE_RENDERED, article);
-
 		c.attr('content', article);
+		PluginHost.run(PluginHost.HOOK_ARTICLE_RENDERED, c.domNode);
 
 		correctHeadlinesOffset(getActiveArticleId());
 
@@ -1231,10 +1230,11 @@ function unpackVisibleHeadlines() {
 					var cencw = $("CENCW-" + child.id.replace("RROW-", ""));
 
 					if (cencw) {
-						PluginHost.run(PluginHost.HOOK_ARTICLE_RENDERED_CDM, child);
-
 						cencw.innerHTML = htmlspecialchars_decode(cencw.innerHTML);
 						cencw.setAttribute('id', '');
+
+						PluginHost.run(PluginHost.HOOK_ARTICLE_RENDERED_CDM, child);
+
 						Element.show(cencw);
 					}
 				}
@@ -1279,26 +1279,15 @@ function headlines_scroll_handler(e) {
 		}
 
 		if (!_infscroll_disable) {
-			if ((hsp && e.scrollTop + e.offsetHeight >= hsp.offsetTop - hsp.offsetHeight) ||
-					(e.scrollHeight != 0 &&
-					 	((e.scrollTop + e.offsetHeight) / e.scrollHeight >= 0.7))) {
+			if (hsp && hsp.offsetTop <= e.scrollTop + e.offsetHeight) {
 
-				if (hsp)
-					hsp.innerHTML = "<span class='loading'><img src='images/indicator_tiny.gif'> " +
-						__("Loading, please wait...") + "</span>";
+				hsp.innerHTML = "<span class='loading'><img src='images/indicator_tiny.gif'> " +
+					__("Loading, please wait...") + "</span>";
 
 				loadMoreHeadlines();
 				return;
 
 			}
-		/*} else {
-			if (hsp) {
-				if (_infscroll_disable)
-					hsp.innerHTML = "<a href='#' onclick='openNextUnreadFeed()'>" +
-						__("Click to open next unread feed.") + "</a>";
-				else
-					hsp.innerHTML = "";
-			}*/
 		}
 
 		if (isCdmMode()) {
