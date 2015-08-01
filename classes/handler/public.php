@@ -461,8 +461,8 @@ class Handler_Public extends Handler {
 		header('Content-Type: text/html; charset=utf-8');
 		print "<html><head><title>Framanews</title>";
 
-		<link rel=\"shortcut icon\" type=\"image/png\" href=\"images/favicon.png\">
-		<link rel=\"icon\" type=\"image/png\" sizes=\"72x72\" href=\"images/favicon-72px.png\">";
+		print "<link rel=\"shortcut icon\" type=\"image/png\" href=\"images/favicon.png\">";
+		print "<link rel=\"icon\" type=\"image/png\" sizes=\"72x72\" href=\"images/favicon-72px.png\">";
 
 		echo stylesheet_tag("css/utility.css");
 		echo stylesheet_tag("css/dijit.css");
@@ -750,8 +750,8 @@ class Handler_Public extends Handler {
 
 		header('Content-Type: text/html; charset=utf-8');
 		print "<html><head><title>Framanews</title>";
-		<link rel=\"shortcut icon\" type=\"image/png\" href=\"images/favicon.png\">
-		<link rel=\"icon\" type=\"image/png\" sizes=\"72x72\" href=\"images/favicon-72px.png\">";
+		print "<link rel=\"shortcut icon\" type=\"image/png\" href=\"images/favicon.png\">";
+		print "<link rel=\"icon\" type=\"image/png\" sizes=\"72x72\" href=\"images/favicon-72px.png\">";
 
 		echo stylesheet_tag("css/utility.css");
 		echo javascript_tag("lib/prototype.js");
