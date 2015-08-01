@@ -51,3 +51,10 @@ git submodule update
 ```
 
 Then, you can follow the official installation guide at <https://tt-rss.org/gitlab/fox/tt-rss/wikis/InstallationNotes>
+
+Added themes
+============
+* Paper: <https://github.com/DarkPreacher/tt-rss-theme-paper>
+* Chalk: <https://github.com/asyncopation/ttrss-theme-chalk>
+* Reeder: <https://github.com/tschinz/tt-rss_reeder_theme>
+* Feedly: <https://github.com/levito/tt-rss-feedly-theme> 
