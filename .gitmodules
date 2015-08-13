@@ -10,3 +10,6 @@
 [submodule "plugins/af_tapastic"]
 	path = plugins/af_tapastic
 	url = https://github.com/ldidry/af_tapastic.git
+[submodule "plugins.local/wallabag"]
+	path = plugins.local/wallabag
+	url = https://gitlab.com/HeikoAdams/tt-rss-wallabag.git
