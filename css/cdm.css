@@ -2,7 +2,7 @@ div.cdmHeader img, div.cdmHeader input, div.cdmFooter img {
 	vertical-align : middle;
 }
 
-div.cdmHeader {
+div.cdmHeader, div.cdmFooter {
 	display : table;
 }
 
@@ -11,11 +11,16 @@ div.cdmHeader > * {
 	padding : 5px;
 }
 
-div.cdmHeader > div {
+div.cdmFooter > * {
+	display : table-cell;
+	vertical-align : middle;
+}
+
+div.cdmHeader > div, div.cdmFooter > div {
 	white-space : nowrap;
 }
 
-div.cdmHeader > span {
+div.cdmHeader > span, div.cdmFooter > span.left {
 	width : 100%;
 }
 
@@ -50,6 +55,10 @@ div.cdmHeader input {
 	margin-right : 4px;
 }
 
+div.cdmIntermediate {
+	margin : 10px;
+}
+
 div.cdmContentInner {
 	margin : 10px;
 	line-height : 1.5;
@@ -74,7 +83,8 @@ div.cdmContentInner h4 {
 }
 
 div.cdmFooter {
-	padding : 5px;
+	height : 30px;
+	padding-left : 5px;
 	font-weight : normal;
 	color : #555;
 	clear : both;
@@ -151,7 +161,7 @@ div.cdm.expandable.Unread div.cdmHeader a.title {
 }
 
 div.cdm.expandable.active div.cdmHeader a.title {
-	color : #4684ff;
+	color : #0088cc;
 	font-size : 16px;
 	font-weight : 600;
 	text-rendering: optimizelegibility;
@@ -181,7 +191,7 @@ div.cdm.expanded.active {
 }
 
 div.cdm.expanded.active div.cdmHeader a.title {
-	color : #4684ff;
+	color : #0088cc;
 }
 
 div.cdm.expanded.Unread div.cdmHeader a.title {
@@ -201,6 +211,7 @@ div.cdm.active div.cdmContent {
 }
 
 span.cdmExcerpt {
+	white-space : nowrap;
 	font-size : 11px;
 	color : #999;
 	font-weight : normal;
@@ -213,7 +224,7 @@ div.cdmContent div.postEnclosures {
 }
 
 div.cdmFeedTitle {
-	border-color : #4684ff;
+	border-color : #0088cc;
 	border-width : 0px 0px 1px 0px;
 	border-style : solid;
 	padding : 5px 3px 5px 5px;
@@ -229,7 +240,7 @@ div.cdmFeedTitle a {
 }
 
 div.cdmFeedTitle a:hover {
-	color : #4684ff;
+	color : #0088cc;
 }
 
 div.cdmHeader span.hlFeed {
@@ -253,7 +264,7 @@ div.cdm .hlFeed a {
 }
 
 div.cdmContentInner p {
-	max-width : 650px;
+	/*max-width : 650px;*/
 	-webkit-hyphens: auto;
 	-moz-hyphens: auto;
 	hyphens: auto;
@@ -265,6 +276,7 @@ div.cdmContentInner iframe {
 }
 
 div.cdmHeader span.author {
+	white-space : nowrap;
 	color : #555;
 	font-size : 11px;
 	font-weight : normal;
@@ -394,6 +406,6 @@ div.cdmFeedTitle a.catchup {
 }
 
 div.cdmFeedTitle a.catchup:hover {
-	color : #4684ff;
+	color : #0088cc;
 }
 

@@ -41,12 +41,12 @@ class Article extends Handler_Protected {
 		} else if ($mode == "zoom") {
 			array_push($articles, format_article($id, true, true));
 		} else if ($mode == "raw") {
-			if ($_REQUEST['html']) {
+			if (isset($_REQUEST['html'])) {
 				header("Content-Type: text/html");
 				print '<link rel="stylesheet" type="text/css" href="css/tt-rss.css"/>';
 			}
 
-			$article = format_article($id, false);
+			$article = format_article($id, false, isset($_REQUEST["zoom"]));
 			print $article['content'];
 			return;
 		}
@@ -88,6 +88,25 @@ class Article extends Handler_Protected {
 			$owner_uid) {
 
 		$guid = 'SHA1:' . sha1("ttshared:" . $url . $owner_uid); // include owner_uid to prevent global GUID clash
+
+		if (!$content) {
+			$pluginhost = new PluginHost();
+			$pluginhost->load_all(PluginHost::KIND_ALL, $owner_uid);
+			$pluginhost->load_data();
+
+			$af_readability = $pluginhost->get_plugin("Af_Readability");
+
+			if ($af_readability) {
+				$enable_share_anything = $pluginhost->get($af_readability, "enable_share_anything");
+
+				if ($enable_share_anything) {
+					$extracted_content = $af_readability->extract_content($url);
+
+					if ($extracted_content) $content = db_escape_string($extracted_content);
+				}
+			}
+		}
+
 		$content_hash = sha1($content);
 
 		if ($labels_str != "") {
@@ -190,7 +209,7 @@ class Article extends Handler_Protected {
 		print "<table width='100%'><tr><td>";
 
 		print "<textarea dojoType=\"dijit.form.SimpleTextarea\" rows='4'
-			style='font-size : 12px; width : 100%' id=\"tags_str\"
+			style='font-size : 12px; width : 98%' id=\"tags_str\"
 			name='tags_str'>$tags_str</textarea>
 		<div class=\"autocomplete\" id=\"tags_choices\"
 				style=\"display:none\"></div>";

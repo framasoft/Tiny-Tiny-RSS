@@ -86,13 +86,13 @@ class Feeds extends Handler_Protected {
 		$reply .= "<span class=\"main\">";
 		$reply .= "<span id='selected_prompt'></span>";
 
-		$reply .= "
+		$reply .= "<span class=\"sel_links\">
 			<a href=\"#\" onclick=\"$sel_all_link\">".__('All')."</a>,
 			<a href=\"#\" onclick=\"$sel_unread_link\">".__('Unread')."</a>,
 			<a href=\"#\" onclick=\"$sel_inv_link\">".__('Invert')."</a>,
 			<a href=\"#\" onclick=\"$sel_none_link\">".__('None')."</a></li>";
 
-		$reply .= " ";
+		$reply .= "</span> ";
 
 		$reply .= "<select dojoType=\"dijit.form.Select\"
 			onchange=\"headlineActionsChange(this)\">";
@@ -148,7 +148,8 @@ class Feeds extends Handler_Protected {
 
 	private function format_headlines_list($feed, $method, $view_mode, $limit, $cat_view,
 					$next_unread_feed, $offset, $vgr_last_feed = false,
-					$override_order = false, $include_children = false, $check_first_id = false) {
+					$override_order = false, $include_children = false, $check_first_id = false,
+					$skip_first_id_check = false) {
 
 		$disable_cache = false;
 
@@ -168,9 +169,27 @@ class Feeds extends Handler_Protected {
 		if ($method == "ForceUpdate" && $feed > 0 && is_numeric($feed)) {
 			// Update the feed if required with some basic flood control
 
-			$result = $this->dbh->query(
-				"SELECT cache_images,".SUBSTRING_FOR_DATE."(last_updated,1,19) AS last_updated
-					FROM ttrss_feeds WHERE id = '$feed'");
+			$any_needs_curl = false;
+
+			if (ini_get("open_basedir")) {
+				$pluginhost = PluginHost::getInstance();
+				foreach ($pluginhost->get_plugins() as $plugin) {
+					$flags = $plugin->flags();
+
+					if (isset($flags["needs_curl"]) && $flags["needs_curl"]) {
+						$any_needs_curl = true;
+						break;
+					}
+				}
+			}
+
+			//if ($_REQUEST["debug"]) print "<!-- any_needs_curl: $any_needs_curl -->";
+
+			if (!$any_needs_curl) {
+
+				$result = $this->dbh->query(
+						"SELECT cache_images," . SUBSTRING_FOR_DATE . "(last_updated,1,19) AS last_updated
+						FROM ttrss_feeds WHERE id = '$feed'");
 
 				if ($this->dbh->num_rows($result) != 0) {
 					$last_updated = strtotime($this->dbh->fetch_result($result, 0, "last_updated"));
@@ -181,9 +200,13 @@ class Feeds extends Handler_Protected {
 						update_rss_feed($feed, true, true);
 					} else {
 						$this->dbh->query("UPDATE ttrss_feeds SET last_updated = '1970-01-01', last_update_started = '1970-01-01'
-							WHERE id = '$feed'");
+								WHERE id = '$feed'");
 					}
 				}
+			} else {
+				$this->dbh->query("UPDATE ttrss_feeds SET last_updated = '1970-01-01', last_update_started = '1970-01-01'
+								WHERE id = '$feed'");
+			}
 		}
 
 		if ($method_split[0] == "MarkAllReadGR")  {
@@ -202,6 +225,7 @@ class Feeds extends Handler_Protected {
 		}
 
 		@$search = $this->dbh->escape_string($_REQUEST["query"]);
+		@$search_language = $this->dbh->escape_string($_REQUEST["search_language"]); // PGSQL only
 
 		if ($search) {
 			$disable_cache = true;
@@ -247,10 +271,12 @@ class Feeds extends Handler_Protected {
 				"view_mode" => $view_mode,
 				"cat_view" => $cat_view,
 				"search" => $search,
+				"search_language" => $search_language,
 				"override_order" => $override_order,
 				"offset" => $offset,
 				"include_children" => $include_children,
-				"check_first_id" => $check_first_id
+				"check_first_id" => $check_first_id,
+				"skip_first_id_check" => $skip_first_id_check
 			);
 
 			$qfh_ret = queryFeedHeadlines($params);
@@ -276,19 +302,7 @@ class Feeds extends Handler_Protected {
 			$feed, $cat_view, $search, $view_mode,
 			$last_error, $last_updated);
 
-		$headlines_count = $this->dbh->num_rows($result);
-
-		/* if (get_pref('COMBINED_DISPLAY_MODE')) {
-			$button_plugins = array();
-			foreach (explode(",", ARTICLE_BUTTON_PLUGINS) as $p) {
-				$pclass = "button_" . trim($p);
-
-				if (class_exists($pclass)) {
-					$plugin = new $pclass();
-					array_push($button_plugins, $plugin);
-				}
-			}
-		} */
+		$headlines_count = is_numeric($result) ? 0 : $this->dbh->num_rows($result);
 
 		if ($offset == 0) {
 			foreach (PluginHost::getInstance()->get_hooks(PluginHost::HOOK_HEADLINES_BEFORE) as $p) {
@@ -298,7 +312,7 @@ class Feeds extends Handler_Protected {
 
 		$reply['content'] = '';
 
-		if (!is_numeric($result) && $this->dbh->num_rows($result) > 0) {
+		if ($headlines_count > 0) {
 
 			$lnum = $offset;
 
@@ -453,7 +467,7 @@ class Feeds extends Handler_Protected {
 
 							$reply['content'] .= "<div id='FTITLE-$feed_id' class='cdmFeedTitle'>".
 								"<div style='float : right'>$feed_icon_img</div>".
-								"<a class='title' href=\"#\" onclick=\"viewfeed($feed_id)\">".
+								"<a class='title' href=\"#\" onclick=\"viewfeed({feed:$feed_id})\">".
 								$line["feed_title"]."</a>
 								$vf_catchup_link</div>";
 
@@ -498,7 +512,7 @@ class Feeds extends Handler_Protected {
 						if (@$line["feed_title"]) {
 							$rgba = @$rgba_cache[$feed_id];
 
-							$reply['content'] .= "<span class=\"hlFeed\"><a style=\"background : rgba($rgba, 0.3)\" href=\"#\" onclick=\"viewfeed($feed_id)\">".
+							$reply['content'] .= "<span class=\"hlFeed\"><a style=\"background : rgba($rgba, 0.3)\" href=\"#\" onclick=\"viewfeed({feed:$feed_id})\">".
 								truncate_string($line["feed_title"],30)."</a></span>";
 						}
 					}
@@ -515,7 +529,7 @@ class Feeds extends Handler_Protected {
 
 					if ($line["feed_title"] && !$vfeed_group_enabled) {
 
-						$reply['content'] .= "<span onclick=\"viewfeed($feed_id)\"
+						$reply['content'] .= "<span onclick=\"viewfeed({feed:$feed_id})\"
 							style=\"cursor : pointer\"
 							title=\"".htmlspecialchars($line['feed_title'])."\">
 							$feed_icon_img</span>";
@@ -558,7 +572,7 @@ class Feeds extends Handler_Protected {
 
 							$reply['content'] .= "<div id='FTITLE-$feed_id' class='cdmFeedTitle'>".
 								"<div style=\"float : right\">$feed_icon_img</div>".
-								"<a href=\"#\" class='title' onclick=\"viewfeed($feed_id)\">".
+								"<a href=\"#\" class='title' onclick=\"viewfeed({feed:$feed_id})\">".
 								$line["feed_title"]."</a> $vf_catchup_link</div>";
 
 						}
@@ -622,7 +636,7 @@ class Feeds extends Handler_Protected {
 
 							$reply['content'] .= "<div class=\"hlFeed\">
 								<a href=\"#\" style=\"background-color: rgba($rgba,0.3)\"
-								onclick=\"viewfeed($feed_id)\">".
+								onclick=\"viewfeed({feed:$feed_id})\">".
 								truncate_string($line["feed_title"],30)."</a>
 							</div>";
 						}
@@ -637,7 +651,7 @@ class Feeds extends Handler_Protected {
 					if (!get_pref("VFEED_GROUP_BY_FEED") && $line["feed_title"]) {
 						$reply['content'] .= "<span style=\"cursor : pointer\"
 							title=\"".htmlspecialchars($line["feed_title"])."\"
-							onclick=\"viewfeed($feed_id)\">$feed_icon_img</span>";
+							onclick=\"viewfeed({feed:$feed_id})\">$feed_icon_img</span>";
 					}
 					$reply['content'] .= "</div>";
 
@@ -660,7 +674,7 @@ class Feeds extends Handler_Protected {
 			if ($line["orig_feed_id"]) {
 
 				$tmp_result = $this->dbh->query("SELECT * FROM ttrss_archived_feeds
-					WHERE id = ".$line["orig_feed_id"]);
+					WHERE id = ".$line["orig_feed_id"] . " AND owner_uid = " . $_SESSION["uid"]);
 
 						if ($this->dbh->num_rows($tmp_result) != 0) {
 
@@ -697,8 +711,11 @@ class Feeds extends Handler_Protected {
 
 					$reply['content'] .= "</span>";
 
-					$always_display_enclosures = sql_bool_to_bool($line["always_display_enclosures"]);
+					$reply['content'] .= "</div>";
 
+					$reply['content'] .= "<div class=\"cdmIntermediate\">";
+
+					$always_display_enclosures = sql_bool_to_bool($line["always_display_enclosures"]);
 					$reply['content'] .= format_article_enclosures($id, $always_display_enclosures, $line["content"], sql_bool_to_bool($line["hide_images"]));
 
 					$reply['content'] .= "</div>";
@@ -710,6 +727,8 @@ class Feeds extends Handler_Protected {
 					}
 
 					$tags_str = format_tags_string($tags, $id);
+
+					$reply['content'] .= "<span class='left'>";
 
 					$reply['content'] .= "<img src='images/tag.png' alt='Tags' title='Tags'>
 						<span id=\"ATSTR-$id\">$tags_str</span>
@@ -737,7 +756,8 @@ class Feeds extends Handler_Protected {
 
 					if ($entry_comments) $reply['content'] .= "&nbsp;($entry_comments)";
 
-					$reply['content'] .= "<div style=\"float : right\">";
+					$reply['content'] .= "</span>";
+					$reply['content'] .= "<div>";
 
 //					$reply['content'] .= "$marked_pic";
 //					$reply['content'] .= "$published_pic";
@@ -895,6 +915,7 @@ class Feeds extends Handler_Protected {
 		$reply['headlines'] = array();
 
 		$override_order = false;
+		$skip_first_id_check = false;
 
 		switch ($order_by) {
 		case "title":
@@ -902,6 +923,7 @@ class Feeds extends Handler_Protected {
 			break;
 		case "date_reverse":
 			$override_order = "score DESC, date_entered, updated";
+			$skip_first_id_check = true;
 			break;
 		case "feed_dates":
 			$override_order = "updated DESC";
@@ -912,7 +934,7 @@ class Feeds extends Handler_Protected {
 
 		$ret = $this->format_headlines_list($feed, $method,
 			$view_mode, $limit, $cat_view, $next_unread_feed, $offset,
-			$vgroup_last_feed, $override_order, true, $check_first_id);
+			$vgroup_last_feed, $override_order, true, $check_first_id, $skip_first_id_check);
 
 		//$topmost_article_ids = $ret[0];
 		$headlines_count = $ret[1];
@@ -923,7 +945,7 @@ class Feeds extends Handler_Protected {
 		//$reply['headlines']['content'] =& $ret[5]['content'];
 		//$reply['headlines']['toolbar'] =& $ret[5]['toolbar'];
 
-		$reply['headlines'] =& $ret[5];
+		$reply['headlines'] = $ret[5];
 
 		if (!$next_unread_feed)
 			$reply['headlines']['id'] = $feed;
@@ -1142,6 +1164,12 @@ class Feeds extends Handler_Protected {
 			required=\"1\" name=\"query\" type=\"search\" value=''>";
 
 		print "<hr/><span style='float : right'>".T_sprintf('in %s', getFeedTitle($active_feed_id, $is_cat))."</span>";
+
+		if (DB_TYPE == "pgsql") {
+			print "<hr/>";
+			print_select("search_language", "", Pref_Feeds::$feed_languages,
+				"dojoType='dijit.form.Select' title=\"".__('Used for word stemming')."\"");
+		}
 
 		print "</div>";
 

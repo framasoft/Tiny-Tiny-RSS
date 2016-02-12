@@ -8,6 +8,10 @@ class Af_RedditImgur extends Plugin {
 			"fox");
 	}
 
+	function flags() {
+		return array("needs_curl" => true);
+	}
+
 	function init($host) {
 		$this->host = $host;
 
@@ -23,6 +27,9 @@ class Af_RedditImgur extends Plugin {
 		$enable_readability = $this->host->get($this, "enable_readability");
 		$enable_readability_checked = $enable_readability ? "checked" : "";
 
+		$enable_content_dupcheck = $this->host->get($this, "enable_content_dupcheck");
+		$enable_content_dupcheck_checked = $enable_content_dupcheck ? "checked" : "";
+		
 		print "<form dojoType=\"dijit.form.Form\">";
 
 		print "<script type=\"dojo/method\" event=\"onSubmit\" args=\"evt\">
@@ -43,9 +50,7 @@ class Af_RedditImgur extends Plugin {
 		print "<input dojoType=\"dijit.form.TextBox\" style=\"display : none\" name=\"method\" value=\"save\">";
 		print "<input dojoType=\"dijit.form.TextBox\" style=\"display : none\" name=\"plugin\" value=\"af_redditimgur\">";
 
-		print "<h3>" . __("Global settings") . "</h3>";
-
-		print_notice("Uses Readability (full-text-rss) implementation by <a target='_blank' href='https://bitbucket.org/fivefilters/'>FiveFilters.org</a>");
+		print "<p>" . __("Uses Readability (full-text-rss) implementation by <a target='_blank' href='https://bitbucket.org/fivefilters/'>FiveFilters.org</a>");
 		print "<p/>";
 
 		print "<input dojoType=\"dijit.form.CheckBox\" id=\"enable_readability\"
@@ -53,6 +58,12 @@ class Af_RedditImgur extends Plugin {
 
 		print "<label for=\"enable_readability\">" . __("Extract missing content using Readability") . "</label>";
 
+		print "<br/>";
+		
+		print "<input dojoType=\"dijit.form.CheckBox\" id=\"enable_content_dupcheck\"
+			$enable_content_dupcheck_checked name=\"enable_content_dupcheck\">&nbsp;";
+
+		print "<label for=\"enable_content_dupcheck\">" . __("Enable additional duplicate checking") . "</label>";
 		print "<p><button dojoType=\"dijit.form.Button\" type=\"submit\">".
 			__("Save")."</button>";
 
@@ -63,8 +74,10 @@ class Af_RedditImgur extends Plugin {
 
 	function save() {
 		$enable_readability = checkbox_to_sql_bool($_POST["enable_readability"]) == "true";
+		$enable_content_dupcheck = checkbox_to_sql_bool($_POST["enable_content_dupcheck"]) == "true";
 
-		$this->host->set($this, "enable_readability", $enable_readability);
+		$this->host->set($this, "enable_readability", $enable_readability, false);
+		$this->host->set($this, "enable_content_dupcheck", $enable_content_dupcheck);
 
 		echo __("Configuration saved");
 	}
@@ -90,12 +103,11 @@ class Af_RedditImgur extends Plugin {
 
 					if ($tmp) {
 						$tmpdoc = new DOMDocument();
-						@$tmpdoc->loadHTML($tmp);
 
-						if ($tmpdoc) {
+						if (@$tmpdoc->loadHTML($tmp)) {
 							$tmpxpath = new DOMXPath($tmpdoc);
 
-							$source_meta = $tmpxpath->query("//meta[@property='og:video']")->item(0);
+							$source_meta = $tmpxpath->query("//meta[@name='twitter:player:stream' and contains(@content, '.mp4')]")->item(0);
 							$poster_meta = $tmpxpath->query("//meta[@property='og:image' and contains(@content,'thumbs.gfycat.com')]")->item(0);
 
 							if ($source_meta) {
@@ -179,9 +191,8 @@ class Af_RedditImgur extends Plugin {
 
 					if ($album_content) {
 						$adoc = new DOMDocument();
-						@$adoc->loadHTML($album_content);
 
-						if ($adoc) {
+						if (@$adoc->loadHTML($album_content)) {
 							$axpath = new DOMXPath($adoc);
 							$aentries = $axpath->query("//meta[@property='og:image']");
 							$urls = array();
@@ -210,6 +221,20 @@ class Af_RedditImgur extends Plugin {
 						}
 					}
 				}
+
+				// wtf is this even
+				if (preg_match("/^https?:\/\/gyazo\.com\/([^\.\/]+$)/", $entry->getAttribute("href"), $matches)) {
+					$img_id = $matches[1];
+
+					$img = $doc->createElement('img');
+					$img->setAttribute("src", "https://i.gyazo.com/$img_id.jpg");
+
+					$br = $doc->createElement('br');
+					$entry->parentNode->insertBefore($img, $entry);
+					$entry->parentNode->insertBefore($br, $entry);
+
+					$found = true;
+				}
 			}
 
 			// remove tiny thumbnails
@@ -230,11 +255,39 @@ class Af_RedditImgur extends Plugin {
 			@$doc->loadHTML($article["content"]);
 			$xpath = new DOMXPath($doc);
 
-			$content_link = $xpath->query("(//a[contains(., '[link]')])")->item(0);
+			if ($this->host->get($this, "enable_content_dupcheck")) {
+				$content_link = $xpath->query("(//a[contains(., '[link]')])")->item(0);
+
+				if ($content_link) {
+					$content_href = db_escape_string($content_link->getAttribute("href"));
+					$entry_guid = db_escape_string($article["guid_hashed"]);
+					$owner_uid = $article["owner_uid"];
+
+					if (DB_TYPE == "pgsql") {
+						$interval_qpart = "date_entered < NOW() - INTERVAL '1 day'";
+					} else {
+						$interval_qpart = "date_entered < DATE_SUB(NOW(), INTERVAL 1 DAY)";
+					}
+
+					$result = db_query("SELECT COUNT(id) AS cid
+						FROM ttrss_entries, ttrss_user_entries WHERE
+							ref_id = id AND
+							$interval_qpart AND
+							guid != '$entry_guid' AND
+							owner_uid = '$owner_uid' AND
+							content LIKE '%href=\"$content_href\">[link]%'");
+
+					if ($result) {
+						$num_found = db_fetch_result($result, 0, "cid");
+
+						if ($num_found > 0) $article["force_catchup"] = true;
+					}
+				}
+			}
 
 			$found = $this->inline_stuff($article, $doc, $xpath);
 
-			if (function_exists("curl_init") && !$found && $this->host->get($this, "enable_readability") &&
+			if (!defined('NO_CURL') && function_exists("curl_init") && !$found && $this->host->get($this, "enable_readability") &&
 				mb_strlen(strip_tags($article["content"])) <= 150) {
 
 				if (!class_exists("Readability")) require_once(dirname(dirname(__DIR__)). "/lib/readability/Readability.php");
@@ -252,8 +305,7 @@ class Af_RedditImgur extends Plugin {
 					curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 					curl_setopt($ch, CURLOPT_HEADER, true);
 					curl_setopt($ch, CURLOPT_NOBODY, true);
-					curl_setopt($ch, CURLOPT_FOLLOWLOCATION,
-						!ini_get("safe_mode") && !ini_get("open_basedir"));
+					curl_setopt($ch, CURLOPT_FOLLOWLOCATION, !ini_get("open_basedir"));
 					curl_setopt($ch, CURLOPT_USERAGENT, SELF_USER_AGENT);
 
 					@$result = curl_exec($ch);
@@ -263,7 +315,10 @@ class Af_RedditImgur extends Plugin {
 
 						$tmp = fetch_file_contents($content_link->getAttribute("href"));
 
-						if ($tmp) {
+						//_debug("tmplen: " . mb_strlen($tmp));
+
+						if ($tmp && mb_strlen($tmp) < 65535 * 4) {
+
 							$r = new Readability($tmp, $content_link->getAttribute("href"));
 
 							if ($r->init()) {

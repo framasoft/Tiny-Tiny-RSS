@@ -88,7 +88,7 @@ class Af_Psql_Trgm extends Plugin {
 			print " <a target=\"_blank\" href=\"$article_link\">".
 				$line["title"]."</a>";
 
-			print " (<a href=\"#\" onclick=\"viewfeed(".$line["feed_id"].")\">".
+			print " (<a href=\"#\" onclick=\"viewfeed({feed:".$line["feed_id"]."})\">".
 				htmlspecialchars($line["feed_title"])."</a>)";
 
 			print " <span class='insensitive'>($sm)</span>";
@@ -156,9 +156,7 @@ class Af_Psql_Trgm extends Plugin {
 		print "<input dojoType=\"dijit.form.TextBox\" style=\"display : none\" name=\"method\" value=\"save\">";
 		print "<input dojoType=\"dijit.form.TextBox\" style=\"display : none\" name=\"plugin\" value=\"af_psql_trgm\">";
 
-		print_notice("PostgreSQL trigram extension returns string similarity as a floating point number (0-1). Setting it too low might produce false positives, zero disables checking.");
-
-		print "<br/>";
+		print "<p>" . __("PostgreSQL trigram extension returns string similarity as a floating point number (0-1). Setting it too low might produce false positives, zero disables checking.") . "</p>";
 		print_notice("Enable the plugin for specific feeds in the feed editor.");
 
 		print "<h3>" . __("Global settings") . "</h3>";
@@ -265,9 +263,8 @@ class Af_Psql_Trgm extends Plugin {
 		$similarity = (float) $this->host->get($this, "similarity");
 		if ($similarity < 0.01) return $article;
 
-		$min_title_length = (int) $this->host->get($this, "min_length");
+		$min_title_length = (int) $this->host->get($this, "min_title_length");
 		if (mb_strlen($article["title"]) < $min_title_length) return $article;
-
 
 		$owner_uid = $article["owner_uid"];
 		$entry_guid = $article["guid_hashed"];
