@@ -28,5 +28,5 @@ Copyright (c) 2013 Luc Didry (unless explicitly stated otherwise).
 https://github.com/gothfox/Tiny-Tiny-RSS
 
 Install:
-Unzip folder and drop in tt-rss plugins folder
+Unzip folder and drop in tt-rss plugins.local folder
 Enable plugin in preferences
