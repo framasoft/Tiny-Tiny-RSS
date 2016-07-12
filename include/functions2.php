@@ -407,10 +407,10 @@
 		if (count($search_query_leftover) > 0) {
 			$search_query_leftover = db_escape_string(implode(" & ", $search_query_leftover));
 
-			if (DB_TYPE == "pgsql") {
+			/*if (DB_TYPE == "pgsql") {
 				array_push($query_keywords,
 					"(tsvector_combined @@ to_tsquery('$search_language', '$search_query_leftover'))");
-			}
+			}*/
 
 		}
 
