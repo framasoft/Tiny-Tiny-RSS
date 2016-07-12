@@ -804,7 +804,10 @@
 
 		db_query("insert into ttrss_feeds (owner_uid,title,feed_url)
 			values ('$uid', 'Framablog',
-				'http://framablog.org/feed/')");
+				'https://framablog.org/feed/')");
+		db_query("insert into ttrss_feeds (owner_uid,title,feed_url)
+			values ('$uid', 'Incidents du réseau Framasoft',
+				'https://status.framasoft.org/atom')");
 	}
 
 	function logout_user() {
