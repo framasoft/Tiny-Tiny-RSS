@@ -2,7 +2,7 @@
 	define_default('DAEMON_UPDATE_LOGIN_LIMIT', 30);
 	define_default('DAEMON_FEED_LIMIT', 500);
 	define_default('DAEMON_SLEEP_INTERVAL', 120);
-	define_default('_MIN_CACHE_IMAGE_SIZE', 1024);
+	define_default('_MIN_CACHE_FILE_SIZE', 1024);
 
 	function calculate_article_hash($article, $pluginhost) {
 		$tmp = "";
@@ -23,9 +23,8 @@
 	function update_feedbrowser_cache() {
 
 		$result = db_query("SELECT feed_url, site_url, title, COUNT(id) AS subscribers
-	  		FROM ttrss_feeds WHERE (SELECT COUNT(id) = 0 FROM ttrss_feeds AS tf
-				WHERE tf.feed_url = ttrss_feeds.feed_url
-				AND (private IS true OR auth_login != '' OR auth_pass != '' OR feed_url LIKE '%:%@%/%'))
+			FROM ttrss_feeds WHERE feed_url NOT IN (SELECT feed_url FROM ttrss_feeds
+				WHERE private IS true OR auth_login != '' OR auth_pass != '' OR feed_url LIKE '%:%@%/%')
 				GROUP BY feed_url, site_url, title ORDER BY subscribers DESC LIMIT 1000");
 
 		db_query("BEGIN");
@@ -183,6 +182,8 @@
 		$nf = 0;
 		$bstarted = microtime(true);
 
+		$batch_owners = array();
+
 		// For each feed, we call the feed update function.
 		foreach ($feeds_to_update as $feed) {
 			if($debug) _debug("Base feed: $feed");
@@ -208,6 +209,9 @@
 				while ($tline = db_fetch_assoc($tmp_result)) {
 					if($debug) _debug(" => " . $tline["last_updated"] . ", " . $tline["id"] . " " . $tline["owner_uid"]);
 
+					if (array_search($tline["owner_uid"], $batch_owners) === FALSE)
+						array_push($batch_owners, $tline["owner_uid"]);
+
 					$fstarted = microtime(true);
 					$rss = update_rss_feed($tline["id"], true, false);
 					_debug_suppress(false);
@@ -222,6 +226,12 @@
 		if ($nf > 0) {
 			_debug(sprintf("Processed %d feeds in %.4f (sec), %.4f (sec/feed avg)", $nf,
 				microtime(true) - $bstarted, (microtime(true) - $bstarted) / $nf));
+		}
+
+		foreach ($batch_owners as $owner_uid) {
+			_debug("Running housekeeping tasks for user $owner_uid...");
+
+			housekeeping_user($owner_uid);
 		}
 
 		require_once "digest.php";
@@ -247,7 +257,7 @@
 		$auth_login = db_fetch_result($result, 0, "auth_login");
 		$auth_pass = db_fetch_result($result, 0, "auth_pass");
 
-		if ($auth_pass_encrypted) {
+		if ($auth_pass_encrypted && function_exists("mcrypt_decrypt")) {
 			require_once "crypt.php";
 			$auth_pass = decrypt_string($auth_pass);
 		}
@@ -256,7 +266,7 @@
 
 		$feed_data = fetch_file_contents($fetch_url, false,
 			$auth_login, $auth_pass, false,
-			FEED_FETCH_TIMEOUT_TIMEOUT,
+			FEED_FETCH_TIMEOUT,
 			0);
 
 		global $fetch_curl_used;
@@ -304,6 +314,13 @@
 
 		$result = db_query("SELECT title FROM ttrss_feeds
 			WHERE id = '$feed'");
+
+		if (db_num_rows($result) == 0) {
+			_debug("feed $feed NOT FOUND/SKIPPED", $debug_enabled);
+			user_error("Attempt to update unknown/invalid feed $feed", E_USER_WARNING);
+			return false;
+		}
+
 		$title = db_fetch_result($result, 0, "title");
 
 		// feed was batch-subscribed or something, we need to get basic info
@@ -320,12 +337,6 @@
 			feed_language
 			FROM ttrss_feeds WHERE id = '$feed'");
 
-		if (db_num_rows($result) == 0) {
-			_debug("feed $feed NOT FOUND/SKIPPED", $debug_enabled);
-			user_error("Attempt to update unknown/invalid feed $feed", E_USER_WARNING);
-			return false;
-		}
-
 		$owner_uid = db_fetch_result($result, 0, "owner_uid");
 		$mark_unread_on_update = sql_bool_to_bool(db_fetch_result($result,
 			0, "mark_unread_on_update"));
@@ -339,7 +350,7 @@
 		$auth_login = db_fetch_result($result, 0, "auth_login");
 		$auth_pass = db_fetch_result($result, 0, "auth_pass");
 
-		if ($auth_pass_encrypted) {
+		if ($auth_pass_encrypted && function_exists("mcrypt_decrypt")) {
 			require_once "crypt.php";
 			$auth_pass = decrypt_string($auth_pass);
 		}
@@ -587,12 +598,12 @@
 				if ($feed_hub_url && $feed_self_url && function_exists('curl_init') &&
 					!ini_get("open_basedir")) {
 
-					require_once 'lib/pubsubhubbub/subscriber.php';
+					require_once 'lib/pubsubhubbub/Subscriber.php';
 
 					$callback_url = get_self_url_prefix() .
 						"/public.php?op=pubsub&id=$feed";
 
-					$s = new Subscriber($feed_hub_url, $callback_url);
+					$s = new Pubsubhubbub\Subscriber\Subscriber($feed_hub_url, $callback_url);
 
 					$rc = $s->subscribe($feed_self_url);
 
@@ -662,15 +673,11 @@
 					print "\n";
 				}
 
-				$entry_comments = $item->get_comments_url();
-				$entry_author = $item->get_author();
-
-				$entry_guid = db_escape_string(mb_substr($entry_guid, 0, 245));
-
-				$entry_comments = db_escape_string(mb_substr(trim($entry_comments), 0, 245));
-				$entry_author = db_escape_string(mb_substr(trim($entry_author), 0, 245));
-
+				$entry_comments = db_escape_string(mb_substr($item->get_comments_url(), 0, 245));
 				$num_comments = (int) $item->get_comments_count();
+
+				$entry_author = $item->get_author(); // escaped later
+				$entry_guid = db_escape_string(mb_substr($entry_guid, 0, 245));
 
 				_debug("author $entry_author", $debug_enabled);
 				_debug("num_comments: $num_comments", $debug_enabled);
@@ -791,12 +798,21 @@
 
 				/* Collect article tags here so we could filter by them: */
 
+				$matched_rules = array();
+
 				$article_filters = get_article_filters($filters, $article["title"],
 					$article["content"], $article["link"], 0, $article["author"],
-					$article["tags"]);
+					$article["tags"], $matched_rules);
 
 				if ($debug_enabled) {
-					_debug("article filters: ", $debug_enabled);
+					_debug("matched filter rules: ", $debug_enabled);
+
+					if (count($matched_rules) != 0) {
+						print_r($matched_rules);
+					}
+
+					_debug("filter actions: ", $debug_enabled);
+
 					if (count($article_filters) != 0) {
 						print_r($article_filters);
 					}
@@ -833,7 +849,7 @@
 				$entry_tags = $article["tags"];
 				$entry_guid = db_escape_string($entry_guid);
 				$entry_title = db_escape_string($article["title"]);
-				$entry_author = db_escape_string($article["author"]);
+				$entry_author = db_escape_string(mb_substr($article["author"], 0, 245));
 				$entry_link = db_escape_string($article["link"]);
 				$entry_content = $article["content"]; // escaped below
 				$entry_force_catchup = $article["force_catchup"];
@@ -843,13 +859,16 @@
 
 				if ($debug_enabled) {
 					_debug("article labels:", $debug_enabled);
-					print_r($article_labels);
+
+					if (count($article_labels) != 0) {
+						print_r($article_labels);
+					}
 				}
 
 				_debug("force catchup: $entry_force_catchup");
 
 				if ($cache_images && is_writable(CACHE_DIR . '/images'))
-					cache_images($entry_content, $site_url, $debug_enabled);
+					cache_media($entry_content, $site_url, $debug_enabled);
 
 				$entry_content = db_escape_string($entry_content, false);
 
@@ -966,25 +985,6 @@
 							$published = 'false';
 						}
 
-						// N-grams
-
-						/* if (DB_TYPE == "pgsql" and defined('_NGRAM_TITLE_DUPLICATE_THRESHOLD')) {
-
-							$result = db_query("SELECT COUNT(*) AS similar FROM
-									ttrss_entries,ttrss_user_entries
-								WHERE ref_id = id AND updated >= NOW() - INTERVAL '7 day'
-									AND similarity(title, '$entry_title') >= "._NGRAM_TITLE_DUPLICATE_THRESHOLD."
-									AND owner_uid = $owner_uid");
-
-							$ngram_similar = db_fetch_result($result, 0, "similar");
-
-							_debug("N-gram similar results: $ngram_similar", $debug_enabled);
-
-							if ($ngram_similar > 0) {
-								$unread = 'false';
-							}
-						} */
-
 						$last_marked = ($marked == 'true') ? 'NOW()' : 'NULL';
 						$last_published = ($published == 'true') ? 'NOW()' : 'NULL';
 
@@ -1002,7 +1002,7 @@
 								"/public.php?op=rss&id=-2&key=" .
 								get_feed_access_key(-2, false, $owner_uid);
 
-							$p = new Publisher(PUBSUBHUBBUB_HUB);
+							$p = new pubsubhubbub\publisher\Publisher(PUBSUBHUBBUB_HUB);
 
 							/* $pubsub_result = */ $p->publish_update($rss_link);
 						}
@@ -1083,10 +1083,14 @@
 				if (is_array($encs)) {
 					foreach ($encs as $e) {
 						$e_item = array(
-							$e->link, $e->type, $e->length, $e->title, $e->width, $e->height);
+							rewrite_relative_url($site_url, $e->link),
+							$e->type, $e->length, $e->title, $e->width, $e->height);
 						array_push($enclosures, $e_item);
 					}
 				}
+
+				if ($cache_images && is_writable(CACHE_DIR . '/images'))
+					cache_enclosures($enclosures, $site_url, $debug_enabled);
 
 				if ($debug_enabled) {
 					_debug("article enclosures:", $debug_enabled);
@@ -1232,7 +1236,31 @@
 		return $rss;
 	}
 
-	function cache_images($html, $site_url, $debug) {
+	function cache_enclosures($enclosures, $site_url, $debug) {
+		foreach ($enclosures as $enc) {
+
+			if (preg_match("/(image|audio|video)/", $enc[1])) {
+
+				$src = rewrite_relative_url($site_url, $enc[0]);
+
+				$local_filename = CACHE_DIR . "/images/" . sha1($src);
+
+				if ($debug) _debug("cache_enclosures: downloading: $src to $local_filename");
+
+				if (!file_exists($local_filename)) {
+					$file_content = fetch_file_contents($src);
+
+					if ($file_content && strlen($file_content) > _MIN_CACHE_FILE_SIZE) {
+						file_put_contents($local_filename, $file_content);
+					}
+				} else {
+					touch($local_filename);
+				}
+			}
+		}
+	}
+
+	function cache_media($html, $site_url, $debug) {
 		libxml_use_internal_errors(true);
 
 		$charset_hack = '<head>
@@ -1243,20 +1271,20 @@
 		$doc->loadHTML($charset_hack . $html);
 		$xpath = new DOMXPath($doc);
 
-		$entries = $xpath->query('(//img[@src])');
+		$entries = $xpath->query('(//img[@src])|(//video/source[@src])|(//audio/source[@src])');
 
 		foreach ($entries as $entry) {
-			if ($entry->hasAttribute('src')) {
+			if ($entry->hasAttribute('src') && strpos($entry->getAttribute('src'), "data:") !== 0) {
 				$src = rewrite_relative_url($site_url, $entry->getAttribute('src'));
 
-				$local_filename = CACHE_DIR . "/images/" . sha1($src) . ".png";
+				$local_filename = CACHE_DIR . "/images/" . sha1($src);
 
-				if ($debug) _debug("cache_images: downloading: $src to $local_filename");
+				if ($debug) _debug("cache_media: downloading: $src to $local_filename");
 
 				if (!file_exists($local_filename)) {
 					$file_content = fetch_file_contents($src);
 
-					if ($file_content && strlen($file_content) > _MIN_CACHE_IMAGE_SIZE) {
+					if ($file_content && strlen($file_content) > _MIN_CACHE_FILE_SIZE) {
 						file_put_contents($local_filename, $file_content);
 					}
 				} else {
@@ -1346,7 +1374,7 @@
 		return $params;
 	}
 
-	function get_article_filters($filters, $title, $content, $link, $timestamp, $author, $tags) {
+	function get_article_filters($filters, $title, $content, $link, $timestamp, $author, $tags, &$matched_rules = false) {
 		$matches = array();
 
 		foreach ($filters as $filter) {
@@ -1364,29 +1392,29 @@
 
 				switch ($rule["type"]) {
 				case "title":
-					$match = @preg_match("/$reg_exp/i", $title);
+					$match = @preg_match("/$reg_exp/iu", $title);
 					break;
 				case "content":
 					// we don't need to deal with multiline regexps
 					$content = preg_replace("/[\r\n\t]/", "", $content);
 
-					$match = @preg_match("/$reg_exp/i", $content);
+					$match = @preg_match("/$reg_exp/iu", $content);
 					break;
 				case "both":
 					// we don't need to deal with multiline regexps
 					$content = preg_replace("/[\r\n\t]/", "", $content);
 
-					$match = (@preg_match("/$reg_exp/i", $title) || @preg_match("/$reg_exp/i", $content));
+					$match = (@preg_match("/$reg_exp/iu", $title) || @preg_match("/$reg_exp/iu", $content));
 					break;
 				case "link":
-					$match = @preg_match("/$reg_exp/i", $link);
+					$match = @preg_match("/$reg_exp/iu", $link);
 					break;
 				case "author":
-					$match = @preg_match("/$reg_exp/i", $author);
+					$match = @preg_match("/$reg_exp/iu", $author);
 					break;
 				case "tag":
 					foreach ($tags as $tag) {
-						if (@preg_match("/$reg_exp/i", $tag)) {
+						if (@preg_match("/$reg_exp/iu", $tag)) {
 							$match = true;
 							break;
 						}
@@ -1412,6 +1440,8 @@
 			if ($inverse) $filter_match = !$filter_match;
 
 			if ($filter_match) {
+				if (is_array($matched_rules)) array_push($matched_rules, $rule);
+
 				foreach ($filter["actions"] AS $action) {
 					array_push($matches, $action);
 
@@ -1507,6 +1537,14 @@
 		_debug("Removed $frows (feeds) $crows (cats) orphaned counter cache entries.");
 	}
 
+	function housekeeping_user($owner_uid) {
+		$tmph = new PluginHost();
+
+		load_user_plugins($owner_uid, $tmph);
+
+		$tmph->run_hooks(PluginHost::HOOK_HOUSE_KEEPING, "hook_house_keeping", "");
+	}
+
 	function housekeeping_common($debug) {
 		expire_cached_files($debug);
 		expire_lock_files($debug);
@@ -1522,6 +1560,5 @@
 		//_debug("Cleaned $rc cached tags.");
 
 		PluginHost::getInstance()->run_hooks(PluginHost::HOOK_HOUSE_KEEPING, "hook_house_keeping", "");
-
 	}
 ?>
