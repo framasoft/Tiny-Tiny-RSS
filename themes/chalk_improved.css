@@ -1,4 +1,4 @@
-/* supports-version:16.8 */
+/* supports-version:17.4 */
 
 /* @66 */
 div.articleNote {
@@ -1681,4 +1681,17 @@ input:disabled + label {
   opacity: .6;
   cursor:default;
   -webkit-user-select: none;
+}
+
+/* plugin: article toolbar small */
+.actionChooser .button_nav,
+.actionChooser .button_nav:hover {
+	position: relative;
+	left: 5px;
+	padding: 0;
+	border: none;
+	background: transparent !important;
+	vertical-align: middle;
+	opacity: 1;
+	cursor: pointer;
 }
