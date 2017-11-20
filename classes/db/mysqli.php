@@ -14,7 +14,8 @@ class Db_Mysqli implements IDb {
 
 			return $this->link;
 		} else {
-			die("Unable to connect to database (as $user to $host, database $db): " . mysqli_connect_error());
+			print("Unable to connect to database (as $user to $host, database $db): " . mysqli_connect_error());
+			exit(102);
 		}
 	}
 
@@ -75,11 +76,10 @@ class Db_Mysqli implements IDb {
 		$this->query("SET time_zone = '+0:0'");
 
 		if (defined('MYSQL_CHARSET') && MYSQL_CHARSET) {
-			$this->query("SET NAMES " . MYSQL_CHARSET);
+			mysqli_set_charset($this->link, MYSQL_CHARSET);
 		}
 
 		return true;
 	}
 
 }
-?>

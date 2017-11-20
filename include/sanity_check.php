@@ -1,6 +1,5 @@
 <?php
-	/*
-	 * WARNING!
+	/* WARNING!
 	 *
 	 * If you modify this file, you are ON YOUR OWN!
 	 *
@@ -16,11 +15,15 @@
 	 * to get out. */
 
 	function make_self_url_path() {
-		$url_path = ($_SERVER['HTTPS'] != "on" ? 'http://' :  'https://') . $_SERVER["HTTP_HOST"] . parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+		$proto = is_server_https() ? 'https' : 'http';
+		$url_path = $proto . '://' . $_SERVER["HTTP_HOST"] . parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 
 		return $url_path;
 	}
 
+	/**
+	 * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+	 */
 	function initial_sanity_check() {
 
 		$errors = array();
@@ -95,11 +98,19 @@
 				}
 			}
 
-			if (SELF_URL_PATH == "http://example.org/tt-rss/") {
-				$urlpath = preg_replace("/\w+\.php$/", "", make_self_url_path());
+			$ref_self_url_path = make_self_url_path();
+			$ref_self_url_path = preg_replace("/\w+\.php$/", "", $ref_self_url_path);
 
+			if (SELF_URL_PATH == "http://example.org/tt-rss/") {
 				array_push($errors,
-						"Please set SELF_URL_PATH to the correct value for your server (possible value: <b>$urlpath</b>)");
+						"Please set SELF_URL_PATH to the correct value for your server (possible value: <b>$ref_self_url_path</b>)");
+			}
+
+			if (isset($_SERVER["HTTP_HOST"]) &&
+				(!defined('_SKIP_SELF_URL_PATH_CHECKS') || !_SKIP_SELF_URL_PATH_CHECKS) &&
+				SELF_URL_PATH != $ref_self_url_path && SELF_URL_PATH != mb_substr($ref_self_url_path, 0, mb_strlen($ref_self_url_path)-1)) {
+				array_push($errors,
+					"Please set SELF_URL_PATH to the correct value detected for your server: <b>$ref_self_url_path</b>");
 			}
 
 			if (!is_writable(ICONS_DIR)) {
@@ -138,8 +149,8 @@
 				array_push($errors, "PHP safe mode setting is obsolete and not supported by tt-rss.");
 			}
 
-			if ((PUBSUBHUBBUB_HUB || PUBSUBHUBBUB_ENABLED) && !function_exists("curl_init")) {
-				array_push($errors, "PHP support for CURL is required for PubSubHubbub.");
+			if (!function_exists("mime_content_type")) {
+				array_push($errors, "PHP function mime_content_type() is missing, try enabling fileinfo module.");
 			}
 
 			if (!class_exists("DOMDocument")) {

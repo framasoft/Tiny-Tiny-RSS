@@ -264,7 +264,6 @@ class Pref_Users extends Handler_Protected {
 
 			$login = db_fetch_result($result, 0, "login");
 			$email = db_fetch_result($result, 0, "email");
-			$salt = db_fetch_result($result, 0, "salt");
 
 			$new_salt = substr(bin2hex(get_random_bytes(125)), 0, 250);
 			$tmp_user_pwd = make_password(8);
@@ -468,6 +467,4 @@ class Pref_Users extends Handler_Protected {
 			print "</div>"; #container
 
 		}
-
 	}
-?>

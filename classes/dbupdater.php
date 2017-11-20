@@ -65,11 +65,11 @@ class DbUpdater {
 					return false;
 				}
 			} else {
-				return true;
+				return false;
 			}
 		} else {
 			return false;
 		}
 	}
 
-} ?>
+}

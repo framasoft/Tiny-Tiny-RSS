@@ -27,7 +27,7 @@ class Handler_Public extends Handler {
 
 		switch ($order) {
 		case "title":
-			$date_sort_field = "ttrss_entries.title";
+			$date_sort_field = "ttrss_entries.title, date_entered, updated";
 			break;
 		case "date_reverse":
 			$date_sort_field = "date_entered, updated";
@@ -36,16 +36,6 @@ class Handler_Public extends Handler {
 			$date_sort_field = "updated DESC";
 			break;
 		}
-
-		/*$qfh_ret = queryFeedHeadlines($feed,
-			1, $view_mode, $is_cat, $search, false,
-			$date_sort_field, $offset, $owner_uid,
-			false, 0, true, true, false, false, $start_ts);*/
-
-		//function queryFeedHeadlines($feed,
-		// $limit, $view_mode, $cat_view, $search, $search_mode,
-		// $override_order = false, $offset = 0, $owner_uid = 0,
-		// $filter = false, $since_id = 0, $include_children = false, $ignore_vfeed_group = false, $override_strategy = false, $override_vfeed = false, $start_ts = false, $check_top_id = false) {
 
 		$params = array(
 			"owner_uid" => $owner_uid,
@@ -61,7 +51,7 @@ class Handler_Public extends Handler {
 			"start_ts" => $start_ts
 		);
 
-		$qfh_ret = queryFeedHeadlines($params);
+		$qfh_ret = Feeds::queryFeedHeadlines($params);
 
 		$result = $qfh_ret[0];
 
@@ -79,11 +69,6 @@ class Handler_Public extends Handler {
 			header("Last-Modified: $last_modified", true);
 		}
 
-		/*$qfh_ret = queryFeedHeadlines($feed,
-			$limit, $view_mode, $is_cat, $search, false,
-			$date_sort_field, $offset, $owner_uid,
-			false, 0, true, true, false, false, $start_ts);*/
-
 		$params = array(
 			"owner_uid" => $owner_uid,
 			"feed" => $feed,
@@ -98,7 +83,7 @@ class Handler_Public extends Handler {
 			"start_ts" => $start_ts
 		);
 
-		$qfh_ret = queryFeedHeadlines($params);
+		$qfh_ret = Feeds::queryFeedHeadlines($params);
 
 		$result = $qfh_ret[0];
 		$feed_title = htmlspecialchars($qfh_ret[1]);
@@ -119,11 +104,6 @@ class Handler_Public extends Handler {
 			$tpl->setVariable('FEED_TITLE', $feed_title, true);
 			$tpl->setVariable('VERSION', VERSION, true);
 			$tpl->setVariable('FEED_URL', htmlspecialchars($feed_self_url), true);
-
-			if (PUBSUBHUBBUB_HUB && $feed == -2) {
-				$tpl->setVariable('HUB_URL', htmlspecialchars(PUBSUBHUBBUB_HUB), true);
-				$tpl->addBlock('feed_hub');
-			}
 
 			$tpl->setVariable('SELF_URL', htmlspecialchars(get_self_url_prefix()), true);
 			while ($line = $this->dbh->fetch_assoc($result)) {
@@ -166,14 +146,14 @@ class Handler_Public extends Handler {
 				$tpl->setVariable('ARTICLE_SOURCE_LINK', htmlspecialchars($line['site_url'] ? $line["site_url"] : get_self_url_prefix()), true);
 				$tpl->setVariable('ARTICLE_SOURCE_TITLE', htmlspecialchars($line['feed_title'] ? $line['feed_title'] : $feed_title), true);
 
-				$tags = get_article_tags($line["id"], $owner_uid);
+				$tags = Article::get_article_tags($line["id"], $owner_uid);
 
 				foreach ($tags as $tag) {
 					$tpl->setVariable('ARTICLE_CATEGORY', htmlspecialchars($tag), true);
 					$tpl->addBlock('category');
 				}
 
-				$enclosures = get_article_enclosures($line["id"]);
+				$enclosures = Article::get_article_enclosures($line["id"]);
 
 				foreach ($enclosures as $e) {
 					$type = htmlspecialchars($e['content_type']);
@@ -210,10 +190,6 @@ class Handler_Public extends Handler {
 			$feed['version'] = VERSION;
 			$feed['feed_url'] = $feed_self_url;
 
-			if (PUBSUBHUBBUB_HUB && $feed == -2) {
-				$feed['hub_url'] = PUBSUBHUBBUB_HUB;
-			}
-
 			$feed['self_url'] = get_self_url_prefix();
 
 			$feed['articles'] = array();
@@ -242,7 +218,7 @@ class Handler_Public extends Handler {
 				if ($line['note']) $article['note'] = $line['note'];
 				if ($article['author']) $article['author'] = $line['author'];
 
-				$tags = get_article_tags($line["id"], $owner_uid);
+				$tags = Article::get_article_tags($line["id"], $owner_uid);
 
 				if (count($tags) > 0) {
 					$article['tags'] = array();
@@ -252,7 +228,7 @@ class Handler_Public extends Handler {
 					}
 				}
 
-				$enclosures = get_article_enclosures($line["id"]);
+				$enclosures = Article::get_article_enclosures($line["id"]);
 
 				if (count($enclosures) > 0) {
 					$article['enclosures'] = array();
@@ -287,11 +263,11 @@ class Handler_Public extends Handler {
 		if ($this->dbh->num_rows($result) == 1) {
 			$uid = $this->dbh->fetch_result($result, 0, "id");
 
-			print getGlobalUnread($uid);
+			print Feeds::getGlobalUnread($uid);
 
 			if ($fresh) {
 				print ";";
-				print getFeedArticles(-3, false, true, $uid);
+				print Feeds::getFeedArticles(-3, false, true, $uid);
 			}
 
 		} else {
@@ -320,71 +296,6 @@ class Handler_Public extends Handler {
 		print "</select>";
 	}
 
-	function pubsub() {
-		$mode = $this->dbh->escape_string($_REQUEST['hub_mode']);
-		if (!$mode) $mode = $this->dbh->escape_string($_REQUEST['hub.mode']);
-
-		$feed_id = (int) $this->dbh->escape_string($_REQUEST['id']);
-		$feed_url = $this->dbh->escape_string($_REQUEST['hub_topic']);
-
-		if (!$feed_url) $feed_url = $this->dbh->escape_string($_REQUEST['hub.topic']);
-
-		if (!PUBSUBHUBBUB_ENABLED) {
-			header('HTTP/1.0 404 Not Found');
-			echo "404 Not found (Disabled by server)";
-			return;
-		}
-
-		// TODO: implement hub_verifytoken checking
-		// TODO: store requested rel=self or whatever for verification
-		// (may be different from stored feed url) e.g. http://url/ or http://url
-
-		$result = $this->dbh->query("SELECT feed_url FROM ttrss_feeds
-			WHERE id = '$feed_id'");
-
-		if ($this->dbh->num_rows($result) != 0) {
-
-			$check_feed_url = $this->dbh->fetch_result($result, 0, "feed_url");
-
-			// ignore url checking for the time being
-			if ($check_feed_url && (true || $check_feed_url == $feed_url || !$feed_url)) {
-				if ($mode == "subscribe") {
-
-					$this->dbh->query("UPDATE ttrss_feeds SET pubsub_state = 2
-						WHERE id = '$feed_id'");
-
-					print $_REQUEST['hub_challenge'];
-					return;
-
-				} else if ($mode == "unsubscribe") {
-
-					$this->dbh->query("UPDATE ttrss_feeds SET pubsub_state = 0
-						WHERE id = '$feed_id'");
-
-					print $_REQUEST['hub_challenge'];
-					return;
-
-				} else if (!$mode) {
-
-					// Received update ping, schedule feed update.
-					//update_rss_feed($feed_id, true, true);
-
-					$this->dbh->query("UPDATE ttrss_feeds SET
-						last_update_started = '1970-01-01',
-						last_updated = '1970-01-01' WHERE id = '$feed_id'");
-
-				}
-			} else {
-				header('HTTP/1.0 404 Not Found');
-				echo "404 Not found (URL check failed)";
-			}
-		} else {
-			header('HTTP/1.0 404 Not Found');
-			echo "404 Not found (Feed not found)";
-		}
-
-	}
-
 	function logout() {
 		logout_user();
 		header("Location: index.php");
@@ -402,7 +313,7 @@ class Handler_Public extends Handler {
 			$id = $this->dbh->fetch_result($result, 0, "ref_id");
 			$owner_uid = $this->dbh->fetch_result($result, 0, "owner_uid");
 
-			$article = format_article($id, false, true, $owner_uid);
+			$article = Article::format_article($id, false, true, $owner_uid);
 
 			print_r($article['content']);
 
@@ -631,7 +542,7 @@ class Handler_Public extends Handler {
 			if ($_REQUEST['return']) {
 				header("Location: " . $_REQUEST['return']);
 			} else {
-				header("Location: " . SELF_URL_PATH);
+				header("Location: " . get_self_url_prefix());
 			}
 		}
 	}
@@ -672,7 +583,7 @@ class Handler_Public extends Handler {
 			  		alt=\"Tiny Tiny RSS\"/>
 					<h1>".__("Subscribe to feed...")."</h1><div class='content'>";
 
-			$rc = subscribe_to_feed($feed_url);
+			$rc = Feeds::subscribe_to_feed($feed_url);
 
 			switch ($rc['code']) {
 			case 0:
@@ -778,7 +689,7 @@ class Handler_Public extends Handler {
 		@$method = $_POST['method'];
 
 		if ($hash) {
-			$login = $_REQUEST["login"];
+			$login = $this->dbh->escape_string($_REQUEST["login"]);
 
 			if ($login) {
 				$result = $this->dbh->query("SELECT id, resetpass_token FROM ttrss_users
@@ -1059,24 +970,9 @@ class Handler_Public extends Handler {
 
 			if (file_exists($filename)) {
 				header("Content-Disposition: inline; filename=\"$hash\"");
-				$mimetype = mime_content_type($filename);
 
-				/* See if we can use X-Sendfile */
-				$xsendfile = false;
-				if (function_exists('apache_get_modules') &&
-				    array_search('mod_xsendfile', apache_get_modules()))
-					$xsendfile = true;
+				send_local_file($filename);
 
-				if ($xsendfile) {
-					header("X-Sendfile: $filename");
-					header("Content-type: $mimetype");
-					header('Content-Disposition: inline; filename="' . basename($filename) . '"');
-				} else {
-					header("Content-type: $mimetype");
-					$stamp = gmdate("D, d M Y H:i:s", filemtime($filename)). " GMT";
-					header("Last-Modified: $stamp", true);
-					readfile($filename);
-				}
 			} else {
 				header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found");
 				echo "File not found.";

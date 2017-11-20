@@ -84,7 +84,7 @@ class Pref_Feeds extends Handler_Protected {
 			$feed['checkbox'] = false;
 			$feed['unread'] = 0;
 			$feed['error'] = $feed_line['last_error'];
-			$feed['icon'] = getFeedIcon($feed_line['id']);
+			$feed['icon'] = Feeds::getFeedIcon($feed_line['id']);
 			$feed['param'] = make_local_datetime(
 				$feed_line['last_updated'], true);
 
@@ -171,7 +171,7 @@ class Pref_Feeds extends Handler_Protected {
 
 				while ($line = $this->dbh->fetch_assoc($result)) {
 
-					$label_id = label_to_feed_id($line['id']);
+					$label_id = Labels::label_to_feed_id($line['id']);
 
 					$feed = $this->feedlist_init_feed($label_id, false, 0);
 
@@ -246,7 +246,7 @@ class Pref_Feeds extends Handler_Protected {
 				$feed['name'] = $feed_line['title'];
 				$feed['checkbox'] = false;
 				$feed['error'] = $feed_line['last_error'];
-				$feed['icon'] = getFeedIcon($feed_line['id']);
+				$feed['icon'] = Feeds::getFeedIcon($feed_line['id']);
 				$feed['param'] = make_local_datetime(
 					$feed_line['last_updated'], true);
 				$feed['unread'] = 0;
@@ -278,7 +278,7 @@ class Pref_Feeds extends Handler_Protected {
 				$feed['name'] = $feed_line['title'];
 				$feed['checkbox'] = false;
 				$feed['error'] = $feed_line['last_error'];
-				$feed['icon'] = getFeedIcon($feed_line['id']);
+				$feed['icon'] = Feeds::getFeedIcon($feed_line['id']);
 				$feed['param'] = make_local_datetime(
 					$feed_line['last_updated'], true);
 				$feed['unread'] = 0;
@@ -339,7 +339,7 @@ class Pref_Feeds extends Handler_Protected {
 				owner_uid = " . $_SESSION["uid"]);
 		}
 
-		$order_id = 0;
+		$order_id = 1;
 
 		$cat = $data_map[$item_id];
 
@@ -634,16 +634,8 @@ class Pref_Feeds extends Handler_Protected {
 				((FORCE_ARTICLE_PURGE == 0) ? "" : 'disabled="1"'));
 
 		print "</div>";
-		print "<div class=\"dlgSec\">".__("Authentication")."</div>";
-		print "<div class=\"dlgSecCont\">";
 
 		$auth_login = htmlspecialchars($this->dbh->fetch_result($result, 0, "auth_login"));
-
-		print "<input dojoType=\"dijit.form.TextBox\" id=\"feedEditDlg_login\"
-			placeHolder=\"".__("Login")."\"
-			autocomplete=\"new-password\"
-			name=\"auth_login\" value=\"$auth_login\"><hr/>";
-
 		$auth_pass = $this->dbh->fetch_result($result, 0, "auth_pass");
 
 		if ($auth_pass_encrypted && function_exists("mcrypt_decrypt")) {
@@ -652,6 +644,18 @@ class Pref_Feeds extends Handler_Protected {
 		}
 
 		$auth_pass = htmlspecialchars($auth_pass);
+		$auth_enabled = $auth_login !== '' || $auth_pass !== '';
+
+		$auth_style = $auth_enabled ? '' : 'display: none';
+		print "<div id='feedEditDlg_loginContainer' style='$auth_style'>";
+		print "<div class=\"dlgSec\">".__("Authentication")."</div>";
+		print "<div class=\"dlgSecCont\">";
+
+		print "<input dojoType=\"dijit.form.TextBox\" id=\"feedEditDlg_login\"
+			placeHolder=\"".__("Login")."\"
+			autocomplete=\"new-password\"
+			name=\"auth_login\" value=\"$auth_login\"><hr/>";
+
 
 		print "<input dojoType=\"dijit.form.TextBox\" type=\"password\" name=\"auth_pass\"
 			autocomplete=\"new-password\"
@@ -662,7 +666,14 @@ class Pref_Feeds extends Handler_Protected {
 			".__('<b>Hint:</b> you need to fill in your login information if your feed requires authentication, except for Twitter feeds.')."
 			</div>";
 
-		print "</div>";
+		print "</div></div>";
+
+		$auth_checked = $auth_enabled ? 'checked' : '';
+		print "<div style=\"clear : both\">
+				<input type=\"checkbox\" $auth_checked name=\"need_auth\" dojoType=\"dijit.form.CheckBox\" id=\"feedEditDlg_loginCheck\"
+						onclick='checkboxToggleElement(this, \"feedEditDlg_loginContainer\")'>
+					<label for=\"feedEditDlg_loginCheck\">".
+					__('This feed requires authentication.')."</div>";
 
 		print '</div><div dojoType="dijit.layout.ContentPane" title="'.__('Options').'">';
 
@@ -784,19 +795,7 @@ class Pref_Feeds extends Handler_Protected {
 			<button class=\"danger\" dojoType=\"dijit.form.Button\" onclick='return unsubscribeFeed($feed_id, \"$title\")'>".
 				__('Unsubscribe')."</button>";
 
-		if (PUBSUBHUBBUB_ENABLED) {
-			$pubsub_state = $this->dbh->fetch_result($result, 0, "pubsub_state");
-			$pubsub_btn_disabled = ($pubsub_state == 2) ? "" : "disabled=\"1\"";
-
-			print "<button dojoType=\"dijit.form.Button\" id=\"pubsubReset_Btn\" $pubsub_btn_disabled
-					onclick='return resetPubSub($feed_id, \"$title\")'>".__('Resubscribe to push updates').
-					"</button>";
-		}
-
 		print "</div>";
-
-		print "<div dojoType=\"dijit.Tooltip\" connectId=\"pubsubReset_Btn\" position=\"below\">".
-			__('Resets PubSubHubbub subscription status for push-enabled feeds.')."</div>";
 
 		print "<button dojoType=\"dijit.form.Button\" onclick=\"return dijit.byId('feedEditDlg').execute()\">".__('Save')."</button>
 			<button dojoType=\"dijit.form.Button\" onclick=\"return dijit.byId('feedEditDlg').hide()\">".__('Cancel')."</button>
@@ -983,7 +982,6 @@ class Pref_Feeds extends Handler_Protected {
 
 		$feed_language = $this->dbh->escape_string(trim($_POST["feed_language"]));
 
-		$auth_pass_encrypted = 'false';
 		$auth_pass = $this->dbh->escape_string($auth_pass);
 
 		if (get_pref('ENABLE_FEED_CATS')) {
@@ -1000,6 +998,10 @@ class Pref_Feeds extends Handler_Protected {
 		}
 
 		if (!$batch) {
+			if ($_POST["need_auth"] !== 'on') {
+				$auth_login = '';
+				$auth_pass = '';
+			}
 
 			$result = db_query("SELECT feed_url FROM ttrss_feeds WHERE id = " . $feed_id);
 			$orig_feed_url = db_fetch_result($result, 0, "feed_url");
@@ -1013,7 +1015,7 @@ class Pref_Feeds extends Handler_Protected {
 				purge_interval = '$purge_intl',
 				auth_login = '$auth_login',
 				auth_pass = '$auth_pass',
-				auth_pass_encrypted = $auth_pass_encrypted,
+				auth_pass_encrypted = false,
 				private = $private,
 				cache_images = $cache_images,
 				hide_images = $hide_images,
@@ -1024,9 +1026,7 @@ class Pref_Feeds extends Handler_Protected {
 			WHERE id = '$feed_id' AND owner_uid = " . $_SESSION["uid"]);
 
 			if ($reset_basic_info) {
-				require_once "rssfuncs.php";
-
-				set_basic_feed_info($feed_id);
+				RSSUtils::set_basic_feed_info($feed_id);
 			}
 
 			PluginHost::getInstance()->run_hooks(PluginHost::HOOK_PREFS_SAVE_FEED,
@@ -1069,8 +1069,7 @@ class Pref_Feeds extends Handler_Protected {
 						break;
 
 					case "auth_pass":
-						$qpart = "auth_pass = '$auth_pass' AND
-							auth_pass_encrypted = $auth_pass_encrypted";
+						$qpart = "auth_pass = '$auth_pass', auth_pass_encrypted = false";
 						break;
 
 					case "private":
@@ -1120,16 +1119,6 @@ class Pref_Feeds extends Handler_Protected {
 		return;
 	}
 
-	function resetPubSub() {
-
-		$ids = $this->dbh->escape_string($_REQUEST["ids"]);
-
-		$this->dbh->query("UPDATE ttrss_feeds SET pubsub_state = 0 WHERE id IN ($ids)
-			AND owner_uid = " . $_SESSION["uid"]);
-
-		return;
-	}
-
 	function remove() {
 
 		$ids = explode(",", $this->dbh->escape_string($_REQUEST["ids"]));
@@ -1147,8 +1136,6 @@ class Pref_Feeds extends Handler_Protected {
 	}
 
 	function rescore() {
-		require_once "rssfuncs.php";
-
 		$ids = explode(",", $this->dbh->escape_string($_REQUEST["ids"]));
 
 		foreach ($ids as $id) {
@@ -1168,13 +1155,13 @@ class Pref_Feeds extends Handler_Protected {
 
 			while ($line = $this->dbh->fetch_assoc($result)) {
 
-				$tags = get_article_tags($line["ref_id"]);
+				$tags = Article::get_article_tags($line["ref_id"]);
 
-				$article_filters = get_article_filters($filters, $line['title'],
+				$article_filters = RSSUtils::get_article_filters($filters, $line['title'],
 					$line['content'], $line['link'], strtotime($line['updated']),
 					$line['author'], $tags);
 
-				$new_score = calculate_article_score($article_filters);
+				$new_score = RSSUtils::calculate_article_score($article_filters);
 
 				if (!$scores[$new_score]) $scores[$new_score] = array();
 
@@ -1225,13 +1212,13 @@ class Pref_Feeds extends Handler_Protected {
 
 			while ($line = $this->dbh->fetch_assoc($tmp_result)) {
 
-				$tags = get_article_tags($line["ref_id"]);
+				$tags = Article::get_article_tags($line["ref_id"]);
 
-				$article_filters = get_article_filters($filters, $line['title'],
+				$article_filters = RSSUtils::get_article_filters($filters, $line['title'],
 					$line['content'], $line['link'], strtotime($line['updated']),
 					$line['author'], $tags);
 
-				$new_score = calculate_article_score($article_filters);
+				$new_score = RSSUtils::calculate_article_score($article_filters);
 
 				if (!$scores[$new_score]) $scores[$new_score] = array();
 
@@ -1493,7 +1480,7 @@ class Pref_Feeds extends Handler_Protected {
 
 			print "<button onclick='window.navigator.registerContentHandler(" .
                       "\"application/vnd.mozilla.maybe.feed\", " .
-                      "\"" . add_feed_url() . "\", " . " \"Tiny Tiny RSS\")'>" .
+                      "\"" . $this->subscribe_to_feed_url() . "\", " . " \"Tiny Tiny RSS\")'>" .
 							 __('Click here to register this site as a feed reader.') .
 				"</button>";
 
@@ -1535,14 +1522,14 @@ class Pref_Feeds extends Handler_Protected {
 		$cat_id = (int) $cat_id;
 
 		if ($cat_id > 0) {
-			$cat_unread = ccache_find($cat_id, $_SESSION["uid"], true);
+			$cat_unread = CCache::find($cat_id, $_SESSION["uid"], true);
 		} else if ($cat_id == 0 || $cat_id == -2) {
-			$cat_unread = getCategoryUnread($cat_id);
+			$cat_unread = Feeds::getCategoryUnread($cat_id);
 		}
 
 		$obj['id'] = 'CAT:' . $cat_id;
 		$obj['items'] = array();
-		$obj['name'] = getCategoryTitle($cat_id);
+		$obj['name'] = Feeds::getCategoryTitle($cat_id);
 		$obj['type'] = 'category';
 		$obj['unread'] = (int) $cat_unread;
 		$obj['bare_id'] = $cat_id;
@@ -1555,7 +1542,7 @@ class Pref_Feeds extends Handler_Protected {
 		$feed_id = (int) $feed_id;
 
 		if (!$title)
-			$title = getFeedTitle($feed_id, false);
+			$title = Feeds::getFeedTitle($feed_id, false);
 
 		if ($unread === false)
 			$unread = getFeedUnread($feed_id, false);
@@ -1566,7 +1553,7 @@ class Pref_Feeds extends Handler_Protected {
 		$obj['type'] = 'feed';
 		$obj['error'] = $error;
 		$obj['updated'] = $updated;
-		$obj['icon'] = getFeedIcon($feed_id);
+		$obj['icon'] = Feeds::getFeedIcon($feed_id);
 		$obj['bare_id'] = $feed_id;
 		$obj['auxcounter'] = 0;
 
@@ -1740,7 +1727,7 @@ class Pref_Feeds extends Handler_Protected {
 		$result = $this->dbh->query("DELETE FROM ttrss_entries WHERE
 			(SELECT COUNT(int_id) FROM ttrss_user_entries WHERE ref_id = id) = 0");
 
-		ccache_update($id, $_SESSION['uid']);
+		CCache::update($id, $_SESSION['uid']);
 	} // function clear_feed_articles
 
 	private function remove_feed_category($id, $owner_uid) {
@@ -1748,7 +1735,7 @@ class Pref_Feeds extends Handler_Protected {
 		$this->dbh->query("DELETE FROM ttrss_feed_categories
 			WHERE id = '$id' AND owner_uid = $owner_uid");
 
-		ccache_remove($id, $owner_uid, true);
+		CCache::remove($id, $owner_uid, true);
 	}
 
 	static function remove_feed($id, $owner_uid) {
@@ -1803,11 +1790,11 @@ class Pref_Feeds extends Handler_Protected {
 				unlink(ICONS_DIR . "/$id.ico");
 			}
 
-			ccache_remove($id, $owner_uid);
+			CCache::remove($id, $owner_uid);
 
 		} else {
-			label_remove(feed_to_label_id($id), $owner_uid);
-			//ccache_remove($id, $owner_uid); don't think labels are cached
+			Labels::remove(Labels::feed_to_label_id($id), $owner_uid);
+			//CCache::remove($id, $owner_uid); don't think labels are cached
 		}
 	}
 
@@ -1883,7 +1870,6 @@ class Pref_Feeds extends Handler_Protected {
 					"SELECT id FROM ttrss_feeds
 					WHERE feed_url = '$feed' AND owner_uid = ".$_SESSION["uid"]);
 
-				$auth_pass_encrypted = 'false';
 				$pass = $this->dbh->escape_string($pass);
 
 				if ($this->dbh->num_rows($result) == 0) {
@@ -1891,7 +1877,7 @@ class Pref_Feeds extends Handler_Protected {
 						"INSERT INTO ttrss_feeds
 							(owner_uid,feed_url,title,cat_id,auth_login,auth_pass,update_method,auth_pass_encrypted)
 						VALUES ('".$_SESSION["uid"]."', '$feed',
-							'[Unknown]', $cat_qpart, '$login', '$pass', 0, $auth_pass_encrypted)");
+							'[Unknown]', $cat_qpart, '$login', '$pass', 0, false)");
 				}
 
 				$this->dbh->query("COMMIT");
@@ -1976,5 +1962,11 @@ class Pref_Feeds extends Handler_Protected {
 
 		print (int) $this->dbh->fetch_result($result, 0, "num_inactive");
 	}
+
+	static function subscribe_to_feed_url() {
+		$url_path = get_self_url_prefix() .
+			"/public.php?op=subscribe&feed_url=%s";
+		return $url_path;
+	}
+
 }
-?>

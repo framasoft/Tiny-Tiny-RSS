@@ -55,6 +55,7 @@
 <html>
 <head>
 	<title>Framanews</title>
+    <meta name="viewport" content="initial-scale=1,width=device-width" />
 
 	<script type="text/javascript">
 		var __ttrss_version = "<?php echo VERSION ?>"
@@ -277,7 +278,7 @@
 
 		<div id="floatingTitle" style="visibility : hidden"></div>
 
-		<div id="headlines-frame" dojoType="dijit.layout.ContentPane"
+		<div id="headlines-frame" dojoType="dijit.layout.ContentPane" tabindex="0"
 				onscroll="headlines_scroll_handler(this)" region="center">
 			<div id="headlinesInnerContainer">
 				<div class="whiteBox"><?php echo __('Loading, please wait...') ?></div>

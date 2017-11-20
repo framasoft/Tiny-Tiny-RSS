@@ -1083,7 +1083,7 @@ function quickAddFilter() {
 				var feed_id = activeFeedIsCat() ? 'CAT:' + parseInt(getActiveFeedId()) :
 					getActiveFeedId();
 
-				var rule = { reg_exp: selectedText, feed_id: feed_id, filter_type: 1 };
+				var rule = { reg_exp: selectedText, feed_id: [feed_id], filter_type: 1 };
 
 				addFilterRule(null, dojo.toJson(rule));
 
@@ -1107,7 +1107,7 @@ function quickAddFilter() {
 						var feed_id = activeFeedIsCat() ? 'CAT:' + parseInt(getActiveFeedId()) :
 							getActiveFeedId();
 
-						var rule = { reg_exp: title, feed_id: feed_id, filter_type: 1 };
+						var rule = { reg_exp: title, feed_id: [feed_id], filter_type: 1 };
 
 						addFilterRule(null, dojo.toJson(rule));
 					}
@@ -1122,27 +1122,6 @@ function quickAddFilter() {
 	dialog.show();
 
 }
-
-function resetPubSub(feed_id, title) {
-
-	var msg = __("Reset subscription? Tiny Tiny RSS will try to subscribe to the notification hub again on next feed update.").replace("%s", title);
-
-	if (title == undefined || confirm(msg)) {
-		notify_progress("Loading, please wait...");
-
-		var query = "?op=pref-feeds&quiet=1&method=resetPubSub&ids=" + feed_id;
-
-		new Ajax.Request("backend.php", {
-			parameters: query,
-			onComplete: function(transport) {
-				dijit.byId("pubsubReset_Btn").attr('disabled', true);
-				notify_info("Subscription reset.");
-			} });
-	}
-
-	return false;
-}
-
 
 function unsubscribeFeed(feed_id, title) {
 

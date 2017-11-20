@@ -73,6 +73,7 @@ create table ttrss_feeds (id serial not null primary key,
 	purge_interval integer not null default 0,
 	last_updated timestamp default null,
 	last_error text not null default '',
+	last_modified text not null default '',
 	favicon_avg_color varchar(11) default null,
 	site_url varchar(250) not null default '',
 	auth_login varchar(250) not null default '',
@@ -246,6 +247,7 @@ create table ttrss_filters2_rules(id serial not null primary key,
 	filter_type integer not null references ttrss_filter_types(id),
 	feed_id integer references ttrss_feeds(id) on delete cascade default null,
 	cat_id integer references ttrss_feed_categories(id) on delete cascade default null,
+	match_on text,
 	cat_filter boolean not null default false);
 
 create table ttrss_filters2_actions(id serial not null primary key,
@@ -263,7 +265,7 @@ create index ttrss_tags_post_int_id_idx on ttrss_tags(post_int_id);
 
 create table ttrss_version (schema_version int not null);
 
-insert into ttrss_version values (130);
+insert into ttrss_version values (132);
 
 create table ttrss_enclosures (id serial not null primary key,
 	content_url text not null,

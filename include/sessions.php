@@ -9,10 +9,10 @@
 	require_once "lib/gettext/gettext.inc";
 	require_once "version.php";
 
-	$session_expire = max(SESSION_COOKIE_LIFETIME, 86400);
+	$session_expire = min(2147483647 - time() - 1, max(SESSION_COOKIE_LIFETIME, 86400));
 	$session_name = (!defined('TTRSS_SESSION_NAME')) ? "ttrss_sid" : TTRSS_SESSION_NAME;
 
-	if (@$_SERVER['HTTPS'] == "on") {
+	if (is_server_https()) {
 		$session_name .= "_ssl";
 		ini_set("session.cookie_secure", true);
 	}
@@ -23,7 +23,7 @@
 	ini_set("session.gc_maxlifetime", $session_expire);
 	ini_set("session.cookie_lifetime", min(0, SESSION_COOKIE_LIFETIME));
 
-	function session_get_schema_version($nocache = false) {
+	function session_get_schema_version() {
 		global $schema_version;
 
 		if (!$schema_version) {
@@ -39,7 +39,7 @@
 	function validate_session() {
 		if (SINGLE_USER_MODE) return true;
 
-		if (isset($_SESSION["ref_schema_version"]) && $_SESSION["ref_schema_version"] != session_get_schema_version(true)) {
+		if (isset($_SESSION["ref_schema_version"]) && $_SESSION["ref_schema_version"] != session_get_schema_version()) {
 			$_SESSION["login_error_msg"] =
 				__("Session failed to validate (schema version changed)");
 			return false;
@@ -72,7 +72,9 @@
 		return true;
 	}
 
-
+	/**
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
 	function ttrss_open ($s, $n) {
 		return true;
 	}
@@ -117,6 +119,9 @@
 		return true;
 	}
 
+	/**
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
 	function ttrss_gc ($expire) {
 		Db::get()->query("DELETE FROM ttrss_sessions WHERE expire < " . time());
 
@@ -135,4 +140,3 @@
 			@session_start();
 		}
 	}
-?>

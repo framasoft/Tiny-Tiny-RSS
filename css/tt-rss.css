@@ -32,7 +32,7 @@ div.postReply div.postTitle {
 	font-weight : 600;
 	text-rendering: optimizelegibility;
 	font-family : "Segoe WP Semibold", "Segoe UI Semibold", 
-		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "DejaVu Sans", "Helvetica Neue",
+		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "Helvetica Neue",
 		Helvetica, Arial, sans-serif;
 }
 
@@ -87,7 +87,7 @@ h1 {
 	font-weight : 600;
 	text-rendering: optimizelegibility;
 	font-family : "Segoe WP Semibold", "Segoe UI Semibold", 
-		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "DejaVu Sans", "Helvetica Neue",
+		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "Helvetica Neue",
 		Helvetica, Arial, sans-serif;
 }
 
@@ -99,7 +99,7 @@ h2 {
 	border-color : #ecf4ff;
 	text-rendering: optimizelegibility;
 	font-family : "Segoe WP Semibold", "Segoe UI Semibold", 
-		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "DejaVu Sans", "Helvetica Neue",
+		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "Helvetica Neue",
 		Helvetica, Arial, sans-serif;
 }
 
@@ -111,7 +111,7 @@ h3 {
 	font-weight : 600;
 	text-rendering: optimizelegibility;
 	font-family : "Segoe WP Semibold", "Segoe UI Semibold", 
-		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "DejaVu Sans", "Helvetica Neue",
+		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "Helvetica Neue",
 		Helvetica, Arial, sans-serif;
 }
 
@@ -120,7 +120,7 @@ h4 {
 	font-weight : 600;
 	text-rendering: optimizelegibility;
 	font-family : "Segoe WP Semibold", "Segoe UI Semibold", 
-		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "DejaVu Sans", "Helvetica Neue",
+		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "Helvetica Neue",
 		Helvetica, Arial, sans-serif;
 }
 
@@ -187,7 +187,7 @@ a:hover {
 #notify span {
 	display : table-cell;
 	vertical-align : middle;
-	padding : 4px;
+	padding : 2px;
 }
 
 .notify {
@@ -214,7 +214,7 @@ a:hover {
 	font-weight : 600;
 	text-rendering: optimizelegibility;
 	font-family : "Segoe WP Semibold", "Segoe UI Semibold", 
-		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "DejaVu Sans", "Helvetica Neue",
+		"Segoe UI Web Semibold", "Segoe UI", Ubuntu, "Helvetica Neue",
 		Helvetica, Arial, sans-serif;
 	color : #777;
 }
@@ -370,13 +370,14 @@ div.prefHelp {
 	white-space : nowrap;
 	display : table-cell;
 	color : #999;
+	overflow : hidden;
 }
 
 #main-toolbar > *,
 #main-toolbar table *,
 #main-toolbar .actionChooser * {
 	text-rendering: optimizelegibility;
-	font-family : "Segoe WP", "Segoe UI Web", "Segoe UI", Ubuntu, "DejaVu Sans", "Helvetica Neue",
+	font-family : "Segoe WP", "Segoe UI Web", "Segoe UI", Ubuntu, "Helvetica Neue",
 		Helvetica, Arial, sans-serif;
 	font-size : 12px;
 
@@ -1083,8 +1084,7 @@ body#ttrssMain #feedTree.dijitTree .dijitTreeRow {
 }
 
 body#ttrssMain #feedTree.dijitTree .dijitTreeNode .dijitTreeRow {
-	padding : 2px 0px 2px;
-	height : 22px;
+	padding : 4px 0px 4px;
 	border-width : 1px;
 	color : #333;
 }
@@ -1092,6 +1092,11 @@ body#ttrssMain #feedTree.dijitTree .dijitTreeNode .dijitTreeRow {
 body#ttrssMain #feedTree.dijitTree img.tinyFeedIcon {
 	position : relative;
 	top : -2px;
+}
+
+#filterDlg_feeds select {
+	height : 150px;
+	width : 410px;
 }
 
 ul#filterDlg_Matches li div.dijitCheckBox, ul#filterDlg_Actions li div.dijitCheckBox {
@@ -1102,7 +1107,7 @@ body#ttrssMain #feedTree {
 	height : 100%;
 	overflow-x : hidden;
 	text-rendering: optimizelegibility;
-	font-family : "Segoe UI Web", "Segoe UI", Ubuntu, "DejaVu Sans", "Helvetica Neue",
+	font-family : "Segoe UI Web", "Segoe UI", Ubuntu, "Helvetica Neue",
 		Helvetica, Arial, sans-serif;
 }
 
@@ -1126,7 +1131,7 @@ body#ttrssMain #feedTree .counterNode {
 	position : relative;
 	line-height : 14px;
 	margin-right : 8px;
-	margin-top : 3px;
+	margin-top : 2px;
 	min-width : 23px;
 	height : 14px;
 }
