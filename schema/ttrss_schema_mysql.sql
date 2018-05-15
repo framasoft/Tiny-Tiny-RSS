@@ -102,6 +102,7 @@ create table ttrss_feeds (id integer not null auto_increment primary key,
 	update_interval integer not null default 0,
 	purge_interval integer not null default 0,
 	last_updated datetime default null,
+	last_unconditional datetime default null,
 	last_error varchar(250) not null default '',
 	last_modified varchar(250) not null default '',
 	favicon_avg_color varchar(11) default null,
@@ -247,7 +248,7 @@ create table ttrss_filters2(id integer primary key auto_increment,
 
 create table ttrss_filters2_rules(id integer primary key auto_increment,
 	filter_id integer not null references ttrss_filters2(id) on delete cascade,
-	reg_exp varchar(250) not null,
+	reg_exp text not null,
 	inverse bool not null default false,
 	filter_type integer not null,
 	feed_id integer default null,
@@ -283,7 +284,7 @@ create table ttrss_tags (id integer primary key auto_increment,
 
 create table ttrss_version (schema_version int not null) ENGINE=InnoDB DEFAULT CHARSET=UTF8;
 
-insert into ttrss_version values (132);
+insert into ttrss_version values (134);
 
 create table ttrss_enclosures (id integer primary key auto_increment,
 	content_url text not null,

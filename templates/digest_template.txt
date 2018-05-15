@@ -1,5 +1,5 @@
 <!-- $BeginBlock digest -->
-Les nouveux articles des dernières 24 heures, le ${CUR_DATE} à ${CUR_TIME}
+Les nouveaux articles des dernières 24 heures, le ${CUR_DATE} à ${CUR_TIME}
 ==============================================================
 <!-- $BeginBlock feed -->
 ${FEED_TITLE}
