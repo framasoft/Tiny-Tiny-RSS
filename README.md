@@ -39,18 +39,16 @@ We translated some hard-coded strings, like the subscription mail.
 
 We added some themes.
 
-We added some plugins as git submodules.
+We added some plugins.
 
 To use our fork, do as follows:
 
 ```
 git clone https://git.framasoft.org/framasoft/framanews_ttrss.git framanews
 cd framanews
-git submodule init
-git submodule update
 ```
 
-Then, you can follow the official installation guide at <https://tt-rss.org/gitlab/fox/tt-rss/wikis/InstallationNotes>
+Then, you can follow the official installation guide at <https://git.tt-rss.org/fox/tt-rss/wiki/InstallationNotes>
 
 Added themes
 ============

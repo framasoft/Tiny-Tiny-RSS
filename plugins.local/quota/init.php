@@ -33,9 +33,13 @@ class Quota extends Plugin {
     }
 
     function over_quota() {
-        if(defined('FEED_QUOTA') && FEED_QUOTA > 0) {
-            $result = db_query( "SELECT COUNT(*) AS cf FROM ttrss_feeds WHERE owner_uid = ".$_SESSION['uid'].";");
-            $num_feeds = db_fetch_result($result, 0, "cf");
+        $sth = $this->pdo->prepare("SELECT access_level FROM ttrss_users WHERE id = ?");
+        $sth->execute([$_SESSION['uid']]);
+        $level = $sth->fetchColumn(0);
+        if($level != 10 && defined('FEED_QUOTA') && FEED_QUOTA > 0) {
+            $sth = $this->pdo->prepare("SELECT COUNT(*) AS cf FROM ttrss_feeds WHERE owner_uid = ?");
+            $sth->execute([$_SESSION['uid']]);
+            $num_feeds = $sth->fetchColumn(0);
 
             if ($num_feeds > FEED_QUOTA) {
                 return $num_feeds - FEED_QUOTA;

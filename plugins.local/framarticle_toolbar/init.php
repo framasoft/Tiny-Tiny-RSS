@@ -21,8 +21,9 @@ class framarticle_toolbar extends Plugin {
 		if (!$user_id) {
 			$user_id = $_SESSION["uid"];
 		}
-		$result = db_query("SELECT CDM_EXPANDED FROM ttrss_user_prefs WHERE owner_uid = $user_id");
-		$value  = db_fetch_result($result, 0, "CDM_EXPANDED");
+		$sth = $this->pdo->prepare("SELECT CDM_EXPANDED FROM ttrss_user_prefs WHERE owner_uid = ?");
+		$sth->execute([$user_id]);
+		$value = $sth->fetchColumn(0);
 		return $value;
 	}
 

@@ -31,16 +31,16 @@ class Tweet extends Plugin {
 	}
 
 	function getInfo() {
-		$id = db_escape_string($_REQUEST['id']);
-
-		$result = db_query("SELECT title, link
+		$sth = $this->pdo->prepare("SELECT title, link
 				FROM ttrss_entries, ttrss_user_entries
-				WHERE id = '$id' AND ref_id = id AND owner_uid = " .$_SESSION['uid']);
+				WHERE id = ? AND ref_id = id AND owner_uid = ?");
+		$sth->execute([$_REQUEST['id'], $_SESSION['uid']]);
 
-		if (db_num_rows($result) != 0) {
-			$title = truncate_string(strip_tags(db_fetch_result($result, 0, 'title')),
+		if ($sth->rowCount() != 0) {
+			$row = $sth->fetch();
+			$title = truncate_string(strip_tags($row['title']),
 				100, '...');
-			$article_link = db_fetch_result($result, 0, 'link');
+			$article_link = $row['link'];
 		}
 
 		print json_encode(array("title" => $title, "link" => $article_link,

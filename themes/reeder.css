@@ -1,6 +1,99 @@
-/* supports-version:16.3 */
+/* supports-version:17.12 */
 @import url(reeder/claro-mod.min.css);
-@import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800);
+/* @import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800); */
+
+/*Create locally stored OpenSans font */
+/* ----------------------------------------------------------
+/* BEGIN Light */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/Light/OpenSans-Light.eot');
+  src: url('reeder/fonts/Light/OpenSans-Light.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/Light/OpenSans-Light.woff') format('woff'), url('reeder/fonts/Light/OpenSans-Light.ttf') format('truetype'), url('reeder/fonts/Light/OpenSans-Light.svg#OpenSansLight') format('svg');
+  font-weight: 300;
+  font-style: normal;
+}
+/* END Light */
+/* BEGIN Light Italic */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/LightItalic/OpenSans-LightItalic.eot');
+  src: url('reeder/fonts/LightItalic/OpenSans-LightItalic.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/LightItalic/OpenSans-LightItalic.woff') format('woff'), url('reeder/fonts/LightItalic/OpenSans-LightItalic.ttf') format('truetype'), url('reeder/fonts/LightItalic/OpenSans-LightItalic.svg#OpenSansLightItalic') format('svg');
+  font-weight: 300;
+  font-style: italic;
+}
+/* END Light Italic */
+/* BEGIN Regular */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/Regular/OpenSans-Regular.eot');
+  src: url('reeder/fonts/Regular/OpenSans-Regular.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/Regular/OpenSans-Regular.woff') format('woff'), url('reeder/fonts/Regular/OpenSans-Regular.ttf') format('truetype'), url('reeder/fonts/Regular/OpenSans-Regular.svg#OpenSansRegular') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+/* END Regular */
+/* BEGIN Italic */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/Italic/OpenSans-Italic.eot');
+  src: url('reeder/fonts/Italic/OpenSans-Italic.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/Italic/OpenSans-Italic.woff') format('woff'), url('reeder/fonts/Italic/OpenSans-Italic.ttf') format('truetype'), url('reeder/fonts/Italic/OpenSans-Italic.svg#OpenSansItalic') format('svg');
+  font-weight: normal;
+  font-style: italic;
+}
+/* END Italic */
+/* BEGIN Semibold */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/Semibold/OpenSans-Semibold.eot');
+  src: url('reeder/fonts/Semibold/OpenSans-Semibold.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/Semibold/OpenSans-Semibold.woff') format('woff'), url('reeder/fonts/Semibold/OpenSans-Semibold.ttf') format('truetype'), url('reeder/fonts/Semibold/OpenSans-Semibold.svg#OpenSansSemibold') format('svg');
+  font-weight: 600;
+  font-style: normal;
+}
+/* END Semibold */
+/* BEGIN Semibold Italic */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/SemiboldItalic/OpenSans-SemiboldItalic.eot');
+  src: url('reeder/fonts/SemiboldItalic/OpenSans-SemiboldItalic.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/SemiboldItalic/OpenSans-SemiboldItalic.woff') format('woff'), url('reeder/fonts/SemiboldItalic/OpenSans-SemiboldItalic.ttf') format('truetype'), url('reeder/fonts/SemiboldItalic/OpenSans-SemiboldItalic.svg#OpenSansSemiboldItalic') format('svg');
+  font-weight: 600;
+  font-style: italic;
+}
+/* END Semibold Italic */
+/* BEGIN Bold */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/Bold/OpenSans-Bold.eot');
+  src: url('reeder/fonts/Bold/OpenSans-Bold.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/Bold/OpenSans-Bold.woff') format('woff'), url('reeder/fonts/Bold/OpenSans-Bold.ttf') format('truetype'), url('reeder/fonts/Bold/OpenSans-Bold.svg#OpenSansBold') format('svg');
+  font-weight: bold;
+  font-style: normal;
+}
+/* END Bold */
+/* BEGIN Bold Italic */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/BoldItalic/OpenSans-BoldItalic.eot');
+  src: url('reeder/fonts/BoldItalic/OpenSans-BoldItalic.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/BoldItalic/OpenSans-BoldItalic.woff') format('woff'), url('reeder/fonts/BoldItalic/OpenSans-BoldItalic.ttf') format('truetype'), url('reeder/fonts/BoldItalic/OpenSans-BoldItalic.svg#OpenSansBoldItalic') format('svg');
+  font-weight: bold;
+  font-style: italic;
+}
+/* END Bold Italic */
+/* BEGIN Extrabold */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/ExtraBold/OpenSans-ExtraBold.eot');
+  src: url('reeder/fonts/ExtraBold/OpenSans-ExtraBold.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/ExtraBold/OpenSans-ExtraBold.woff') format('woff'), url('reeder/fonts/ExtraBold/OpenSans-ExtraBold.ttf') format('truetype'), url('reeder/fonts/ExtraBold/OpenSans-ExtraBold.svg#OpenSansExtrabold') format('svg');
+  font-weight: 800;
+  font-style: normal;
+}
+/* END Extrabold */
+/* BEGIN Extrabold Italic */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('reeder/fonts/ExtraBoldItalic/OpenSans-ExtraBoldItalic.eot');
+  src: url('reeder/fonts/ExtraBoldItalic/OpenSans-ExtraBoldItalic.eot?#iefix') format('embedded-opentype'), url('reeder/fonts/ExtraBoldItalic/OpenSans-ExtraBoldItalic.woff') format('woff'), url('reeder/fonts/ExtraBoldItalic/OpenSans-ExtraBoldItalic.ttf') format('truetype'), url('reeder/fonts/ExtraBoldItalic/OpenSans-ExtraBoldItalic.svg#OpenSansExtraboldItalic') format('svg');
+  font-weight: 800;
+  font-style: italic;
+}
+/* END Extrabold Italic */
 
 /* FROM TT-RSS.CSS ************************************************************/
 
@@ -358,13 +451,21 @@ img,
 
 /* BASE LAYOUT ************************************************************/
 
+.ttrss_main,
 #ttrssMain,
 #ttrssPrefs {
+	width: 100%,
+	height: 100%,
+	position: absolute;
+	margin: 0px;
+/*	padding: 8px;*/
 	overflow: hidden;
-	max-height:100%;
+	max-height: 100%;
 }
 #main {
-	width: auto;
+	width: 100%;
+	position: absolute;
+	height:100%;
 }
 #main-toolbar,
 #headlines-toolbar .holder {
@@ -413,6 +514,16 @@ a:hover {
 
 
 /* STYLING ************************************************************/
+
+.claro .dijitPopup {
+max-height: 500px;
+overflow-y: auto;
+}
+
+.claro .dijitMenuPopup {
+max-height: 500px;
+overflow-y: auto;
+}
 
 #toolbar {
 	padding-left: 32px;
@@ -551,12 +662,12 @@ a:hover {
 }
 
 /************************************************************
-* Feed Tree (Sidebar)
+* Sidebar needs toggle_sidebar plugin
 */
-#ttrssMain #main_toolbar_form > .dijitButton {
+#ttrssMain #main-toolbar > .dijitButton {
 	display: block !important;
 }
-#ttrssMain #main_toolbar_form > .dijitButton .dijitButtonNode {
+#ttrssMain #main-toolbar > .dijitButton .dijitButtonNode {
   background-color: rgba(215,206,186,1) !important; /*bg_darker*/
   background-image: url(reeder/images/reeder_stripes.png) !important;
 	position: fixed;
@@ -571,7 +682,7 @@ a:hover {
 	box-shadow: none;
 	transition: background .5s;
 }
-#ttrssMain #main_toolbar_form > .dijitButton .dijitButtonContents {
+#ttrssMain #main-toolbar > .dijitButton .dijitButtonContents {
 	position: absolute;
 	top: 83px;
 	left: 7px;
@@ -585,12 +696,16 @@ a:hover {
 	opacity: .2;
 	transition: opacity .5s;
 }
-#ttrssMain #main_toolbar_form > .dijitButton:hover .dijitButtonNode {
+#ttrssMain #main-toolbar > .dijitButton:hover .dijitButtonNode {
 	background: rgba(0,0,0,.05);
 }
-#ttrssMain #main_toolbar_form > .dijitButton:hover .dijitButtonContents {
+#ttrssMain #main-toolbar > .dijitButton:hover .dijitButtonContents {
 	opacity: .7;
 }
+
+/************************************************************
+* Feed Tree
+*/
 #feeds-holder #feedTree {
   background-color: rgba(239,230,207,1) !important; /*bg_dark*/
   background-image: url(reeder/images/reeder_stripes.png) !important;
@@ -654,7 +769,7 @@ a:hover {
 	font-size: 10px;
 }
 #feeds-holder .dijitTreeRow .counterNode.aux {
-	color: #4f4e48; 
+	color: #4f4e48;
 }
 #feeds-holder img.feedIcon,
 #feeds-holder .labelColorIndicator {
@@ -773,6 +888,10 @@ a:hover {
   border-radius: 3px;
 }
 
+#feedTree > div.dijitTreeContainer {
+  max-width: 100%;
+}
+
 /************************************************************
 * Main
 */
@@ -859,6 +978,7 @@ a:hover {
 	right: 34px;
 	left: 26px;
 	z-index: 4;
+  margin-right: 0px !important;
 }
 #floatingTitle .title {
 	color: inherit;
@@ -1162,6 +1282,9 @@ not(#headlines-frame.wide),
 	clear: both;
 	padding: 0 33px 33px;
 }
+div.cdmFooter > div {
+	  float: right;
+}
 .cdm.expandable.active .cdmHeader .titleWrap,
 .cdm.expanded .cdmHeader > .titleWrap {
 	padding: 0;
@@ -1304,7 +1427,8 @@ div.articleNote {
 	color: #444;
 	line-height: 1;
 }
-.cdmContentInner {
+.cdmContentInner,
+.cdmIntermediate {
 	background: rgba(239,230,207,1); /*bg_dark*/
 	margin: -200px 0 0;
 	padding: 210px 33px 10px;
@@ -1719,7 +1843,7 @@ img[src*="images/mark_unset.png"] { /* TTRSS > v1.9 */
   background: transparent url(reeder/images/star.png) no-repeat;
   height: 24px;
   padding-right: 24px;
-  width: 0;  
+  width: 0;
   margin-top: -5px;
   display: inline-block;
 }
@@ -1766,7 +1890,7 @@ img[src*="plugins/note/note.png"] {
   display: inline-block;
 }
 
-img[src*="plugins/share/share.png"] { 
+img[src*="plugins/share/share.png"] {
   background: transparent url(reeder/images/share.png) no-repeat;
   height: 24px;
   padding-right: 24px;
