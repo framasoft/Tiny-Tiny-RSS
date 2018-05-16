@@ -100,8 +100,9 @@ class API extends Handler {
 	}
 
 	function placesAvailables() {
-		$result = $this->dbh->query("SELECT COUNT(*) AS cu FROM ttrss_users");
-		$num_users = $this->dbh->fetch_result($result, 0, "cu");
+		$sth = $this->pdo->prepare("SELECT COUNT(*) AS cu FROM ttrss_users");
+		$sth->execute();
+		$num_users = $sth->fetchColumn(0);
 		$num_users = REG_MAX_USERS - $num_users;
 		$this->wrap(self::STATUS_OK, array("places" => $num_users));
 	}
