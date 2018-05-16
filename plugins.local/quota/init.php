@@ -11,8 +11,8 @@ class Quota extends Plugin {
     }
 
     function init($host) {
-        $this->dbh = $host->get_dbh();
         $this->host = $host;
+        $this->pdo = Db::pdo();
     }
 
     function get_js() {

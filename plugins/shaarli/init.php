@@ -13,7 +13,7 @@ class Shaarli extends Plugin {
 
   function init($host) {
     $this->host = $host;
-    $this->dbh = $host->get_dbh();
+    $this->pdo = Db::pdo();
 
     $host->add_hook($host::HOOK_ARTICLE_BUTTON, $this);
     $host->add_hook($host::HOOK_PREFS_TAB, $this);
@@ -75,16 +75,16 @@ class Shaarli extends Plugin {
   }
 
   function getShaarli() {
-    $id = db_escape_string($_REQUEST['id']);
-
-    $result = $this->dbh->query("SELECT title, link
+    $sth = $this->pdo->prepare("SELECT title, link
                       FROM ttrss_entries, ttrss_user_entries
-                      WHERE id = '$id' AND ref_id = id AND owner_uid = " .$_SESSION['uid']);
+                      WHERE id = ? AND ref_id = id AND owner_uid = ?");
+    $sth->execute([$_REQUEST['id'], $_SESSION['uid']]);
 
-    if (db_num_rows($result) != 0) {
-      $title = truncate_string(strip_tags(db_fetch_result($result, 0, 'title')),
+    if ($sth->rowCount() != 0) {
+      $row = $sth->fetch();
+      $title = truncate_string(strip_tags($row['title']),
                                100, '...');
-      $article_link = db_fetch_result($result, 0, 'link');
+      $article_link = $row['link'];
     }
 
     $shaarli_url = $this->host->get($this, "shaarli");

@@ -11,8 +11,8 @@ class framarticle_toolbar extends Plugin {
 	}
 
 	function init($host) {
-		$this->dbh = $host->get_dbh();
 		$this->host = $host;
+        $this->pdo = Db::pdo();
 
 		$host->add_hook($host::HOOK_TOOLBAR_BUTTON, $this);
 	}

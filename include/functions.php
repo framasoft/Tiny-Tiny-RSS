@@ -685,19 +685,6 @@
 			if ($user_id && !$check_only) {
 				@session_start();
 
-				if (defined('SYMPA_ADDRESS') && defined('SYMPA_ML')) {
-					$result = db_query("SELECT email FROM ttrss_users WHERE last_login IS NULL AND id = ".$user_id);
-					if (db_num_rows($result) != 0) {
-						$email = db_fetch_result($result, 0, "email");
-
-						$mail = new ttrssMailer();
-						$mail->IsHTML(false);
-						$rc = $mail->quickMail(SYMPA_ADDRESS, "", "invite ".SYMPA_ML." ".$email, "Please, subscribe", false);
-
-						if (!$rc) print_error($mail->ErrorInfo);
-					}
-				}
-
 				$_SESSION["uid"] = $user_id;
 				$_SESSION["version"] = VERSION_STATIC;
 
@@ -787,6 +774,7 @@
 	function initialize_user($uid) {
 
 		$pdo = DB::pdo();
+
 		$sth = $pdo->prepare("insert into ttrss_feeds (owner_uid,title,feed_url)
 			values (?, 'Framablog',
 				'https://framablog.org/feed/')");
